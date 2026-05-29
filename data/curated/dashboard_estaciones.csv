@@ -1,0 +1,5 @@
+corte_estacion,corte_descripcion,corte_ct_seg,corte_pct_takt,corte_estado,doblado_fine_estacion,doblado_fine_descripcion,doblado_fine_ct_seg,doblado_fine_pct_takt,doblado_fine_estado,doblado_heavy_estacion,doblado_heavy_descripcion,doblado_heavy_ct_seg,doblado_heavy_pct_takt,doblado_heavy_estado,soldadura_estacion,soldadura_descripcion,soldadura_ct_seg,soldadura_pct_takt,soldadura_estado,pintura_estacion,pintura_descripcion,pintura_ct_seg,pintura_pct_takt,pintura_estado,corte_laser_estacion,corte_laser_descripcion,corte_laser_ct_seg,corte_laser_pct_takt,corte_laser_estado
+Alimentación,Alimentación,430,23.9,OK,P1,P1,451,18.8,OK,P5,P5,571,17.8,OK,Preparación,Preparación,535,19.1,OK,Pretratamiento,Pretratamiento,372,16.9,OK,,,,,
+Corte,Corte,506,28.1,OK,P2,P2,481,20.0,OK,P6,P6,641,20.0,OK,Soldadura MIG,Soldadura MIG,582,20.8,OK,Pintura polvo,Pintura polvo,450,20.5,OK,,,,,
+Inspección,Inspección,584,32.4,OK,P3,P3,498,20.8,OK,P7,P7,717,22.4,OK,Soldadura TIG,Soldadura TIG,628,22.4,OK,Curado,Curado,524,23.8,OK,,,,,
+,,,,,P4,P4,595,24.8,OK,P8,P8,788,24.6,OK,Acabado,Acabado,666,23.8,OK,Inspección,Inspección,539,24.5,OK,,,,,

@@ -1,0 +1,9 @@
+part_number,days_left,owner,linea
+MD-SOP-001-A,1,Ing. Mario Gómez,Corte LASER
+MD-BAS-001-B,2,Ing. José López,Doblado Fine
+MD-PAN-001-C,1,Ing. Ricardo Mendoza,Doblado Heavy
+MD-BRA-001-D,3,Ing. Ana Martínez,Soldadura
+MD-TAP-001-F,2,Supervisor Turno A,Corte LASER
+MD-ESC-001-G,5,Ing. José López,Doblado Fine
+MD-MON-001-E,1,Ing. Luis Fernández,Pintura
+MD-PLACA-001-H,4,Ing. Ricardo Mendoza,Doblado Heavy

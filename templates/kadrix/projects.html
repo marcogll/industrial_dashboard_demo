@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .project-card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 16px; box-shadow: var(--shadow-soft); transition: var(--transition); }
+  .project-card:hover { box-shadow: var(--shadow-medium); transform: translateY(-2px); }
+  .project-card .project-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .project-card .project-head h3 { font-size: 15px; font-weight: 700; }
+  .project-card .project-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+  .project-card .project-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-bottom: 14px; }
+  .progress-track { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-top: 6px; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ title }}</h1>
+  <p class="subtitle">Iniciativas activas y completadas de mejora continua en planta.</p>
+</div>
+
+{% if not projects %}
+<div style="padding: 24px; text-align: center; color: var(--text-muted);">
+  No hay proyectos registrados.
+</div>
+{% else %}
+
+<!-- Cards de proyectos destacados -->
+<div class="card-grid" style="margin-bottom: 28px;">
+  {% for p in projects[:4] %}
+  <div class="project-card">
+    <div class="project-head">
+      <h3>{{ p.name }}</h3>
+      {% if p.status == 'active' %}
+      <span class="badge" style="background:var(--badge-info-bg);color:var(--accent-blue)">Activo</span>
+      {% elif p.status == 'completed' %}
+      <span class="badge badge-ok">Completado</span>
+      {% elif p.status == 'on_hold' %}
+      <span class="badge badge-warn">Pausado</span>
+      {% elif p.status == 'cancelled' %}
+      <span class="badge badge-crit">Cancelado</span>
+      {% else %}
+      <span class="badge badge-pendiente">Borrador</span>
+      {% endif %}
+    </div>
+    <p class="project-desc">{{ p.description or 'Sin descripción.' }}</p>
+    <div class="project-meta">
+      <span>📅 Inicio: {{ p.start_date or '—' }}</span>
+      <span>🏁 Fin: {{ p.end_date or '—' }}</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width:{{ p.progress or 0 }}%;background:
+        {% if p.status == 'active' %}var(--accent-blue)
+        {% elif p.status == 'completed' %}var(--accent-green)
+        {% elif p.status == 'on_hold' %}var(--accent-yellow)
+        {% elif p.status == 'cancelled' %}var(--accent-red)
+        {% else %}var(--text-muted)
+        {% endif %};"></div>
+    </div>
+    <div class="progress-label">
+      <span>Progreso</span>
+      <span>{{ p.progress or 0 }}%</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Tabla de proyectos -->
+<div class="card">
+  <div class="card-head">
+    <h3>Lista de Proyectos</h3>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Inicio</th>
+            <th>Fin</th>
+            <th>Progreso</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in projects %}
+          <tr>
+            <td><strong>{{ p.name }}</strong></td>
+            <td>{{ (p.description or '')[:50] }}{% if p.description and p.description|length > 50 %}…{% endif %}</td>
+            <td>
+              {% if p.status == 'active' %}
+              <span class="badge" style="background:var(--badge-info-bg);color:var(--accent-blue)">Activo</span>
+              {% elif p.status == 'completed' %}
+              <span class="badge badge-ok">Completado</span>
+              {% elif p.status == 'on_hold' %}
+              <span class="badge badge-warn">Pausado</span>
+              {% elif p.status == 'cancelled' %}
+              <span class="badge badge-crit">Cancelado</span>
+              {% else %}
+              <span class="badge badge-pendiente">Borrador</span>
+              {% endif %}
+            </td>
+            <td>{{ p.start_date or '—' }}</td>
+            <td>{{ p.end_date or '—' }}</td>
+            <td>
+              <div class="progress-track" style="width:120px;">
+                <div class="progress-fill" style="width:{{ p.progress or 0 }}%;background:var(--accent-blue)"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

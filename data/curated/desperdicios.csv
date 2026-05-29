@@ -1,0 +1,9 @@
+categoria,tiempo_seg,pct,causa_raiz,accion
+Trabajo productivo,1820,65.0,Proceso estable,Mantener
+Esperas,280,10.0,Falta de material en estación,Implementar kanban
+Retrabajo,196,7.0,Parámetros de soldadura no estandarizados,Estandarizar WPS
+Caminatas,168,6.0,Layout ineficiente,Reacomodar estaciones
+Setup,140,5.0,SMED no implementado,Capacitar en SMED
+Mantenimiento,84,3.0,Falta de TPM,Implementar mantenimiento autónomo
+Calidad,56,2.0,Inspección manual,Automatizar inspección
+Otros,56,2.0,Varios,Análisis adicional

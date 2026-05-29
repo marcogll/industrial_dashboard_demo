@@ -1,0 +1,16 @@
+{
+  "name": "Massive Dynamic Dashboard",
+  "short_name": "MD Dash",
+  "description": "Massive Dynamic — Dashboard de Producción",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0f14",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/static/massive_dynamic.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

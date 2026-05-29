@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Error — {{ title }}{% endblock %}
+{% block extra_css %}
+.error-wrap { text-align: center; padding: 80px 20px; }
+.error-code { font-size: 96px; font-weight: 800; color: #e2e8f0; line-height: 1; }
+.error-title { font-size: 20px; font-weight: 600; margin: 16px 0 8px; }
+.error-desc { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+.error-btn { display: inline-block; padding: 10px 20px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 13px; }
+{% endblock %}
+{% block content %}
+<div class="error-wrap">
+  <div class="error-code">500</div>
+  <div class="error-title">Error interno del servidor</div>
+  <div class="error-desc">Algo salió mal. El equipo ha sido notificado.</div>
+  <a href="{{ url_for('dashboard') }}" class="error-btn">Volver al inicio</a>
+</div>
+{% endblock %}

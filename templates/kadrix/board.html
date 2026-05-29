@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .kanban { display: grid; grid-template-columns: repeat({{ columns|length if columns else 1 }}, 1fr); gap: 16px; align-items: start; }
+  .kanban-col { background: var(--bg); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px; min-height: 320px; }
+  .kanban-col h4 { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .kanban-card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; cursor: grab; transition: var(--transition); box-shadow: var(--shadow-soft); }
+  .kanban-card:hover { box-shadow: var(--shadow-medium); transform: translateY(-2px); }
+  .kanban-card .card-title { font-size: 13px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; }
+  .kanban-card .card-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--text-secondary); }
+  .kanban-card .card-meta .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .kanban-add { width: 100%; padding: 10px; border: 2px dashed var(--border); border-radius: var(--radius-md); background: transparent; color: var(--text-muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 6px; transition: var(--transition); }
+  .kanban-add:hover { border-color: var(--accent-orange); color: var(--accent-orange); }
+  @media(max-width: 900px) { .kanban { grid-template-columns: 1fr 1fr; } }
+  @media(max-width: 560px) { .kanban { grid-template-columns: 1fr; } }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 50; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px; width: 90%; max-width: 420px; box-shadow: var(--shadow-heavy); border: 1px solid var(--border-light); }
+  .modal h3 { margin-bottom: 16px; font-size: 16px; font-weight: 700; }
+  .modal label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; margin-top: 12px; }
+  .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; font-size: 13px; background: var(--surface); outline: none; }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--accent-orange); box-shadow: 0 0 0 3px var(--badge-warn-bg); }
+  .modal textarea { resize: vertical; min-height: 80px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-actions button { padding: 10px 18px; border-radius: var(--radius-sm); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+  .modal-actions .btn-primary { background: var(--text); color: #fff; }
+  .modal-actions .btn-primary:hover { background: var(--ctp-overlay2); }
+  .modal-actions .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ title }}</h1>
+  <p class="subtitle">Boards por proyecto: asigna responsables, usa tags en la descripcion y mueve tarjetas por estado.</p>
+</div>
+
+<div class="kanban">
+  {% for col in columns %}
+  <div class="kanban-col" data-column-id="{{ col.id }}">
+    <h4>{{ col.name }}</h4>
+
+    {% for task in tasks if task.column_id == col.id %}
+    <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}">
+      <div class="card-title">{{ task.title }}</div>
+      <div class="card-meta">
+        <span class="dot" style="background:{{ col.color }};"></span> {{ task.assigned_name or 'Sin asignar' }}
+        {% if task.priority == 'high' %}
+        <span class="badge badge-alta">ALTA</span>
+        {% elif task.priority == 'medium' %}
+        <span class="badge badge-media">MEDIA</span>
+        {% else %}
+        <span class="badge badge-baja">BAJA</span>
+        {% endif %}
+      </div>
+      {% if task.due_date %}
+      <div class="card-meta" style="margin-top:6px;">
+        📅 {{ task.due_date }}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <button class="kanban-add" onclick="openModal({{ col.id }})">+ Nueva Tarjeta</button>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Modal crear tarea -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <h3>➕ Nueva Tarjeta</h3>
+    <form id="createTaskForm" method="post" action="{{ url_for('massive.create_task', board_id=board.id) }}">
+      <input type="hidden" name="column_id" id="modalColumnId">
+      <label for="taskTitle">Título</label>
+      <input type="text" name="title" id="taskTitle" required>
+
+      <label for="taskDesc">Descripción</label>
+      <textarea name="description" id="taskDesc" placeholder="Notas, tags libres y contexto. Ej: tag=qa tag=tarde fixture=FX-001"></textarea>
+
+      <label for="taskAssigned">Asignado a</label>
+      <select name="assigned_to" id="taskAssigned">
+        <option value="">— Sin asignar —</option>
+        {% for u in users %}
+        <option value="{{ u.id }}">{{ u.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="taskPriority">Prioridad</label>
+      <select name="priority" id="taskPriority">
+        <option value="low">Baja</option>
+        <option value="medium" selected>Media</option>
+        <option value="high">Alta</option>
+      </select>
+
+      <label for="taskDue">Fecha límite</label>
+      <input type="date" name="due_date" id="taskDue">
+
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Crear</button>
+        <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('taskModal');
+  function openModal(colId) {
+    document.getElementById('modalColumnId').value = colId;
+    modal.classList.add('active');
+  }
+  function closeModal() {
+    modal.classList.remove('active');
+    document.getElementById('createTaskForm').reset();
+  }
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+  });
+
+  // Drag & drop + move task
+  let dragged = null;
+  document.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('dragstart', e => { dragged = card; card.style.opacity = '0.5'; });
+    card.addEventListener('dragend', e => { card.style.opacity = '1'; dragged = null; });
+  });
+  document.querySelectorAll('.kanban-col').forEach(col => {
+    col.addEventListener('dragover', e => e.preventDefault());
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragged) return;
+      const taskId = dragged.dataset.taskId;
+      const columnId = col.dataset.columnId;
+      fetch(`{{ url_for('massive.move_task', task_id=0) }}`.replace('/0/', `/${taskId}/`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ column_id: parseInt(columnId) })
+      }).then(r => r.json()).then(data => {
+        if (data.ok) {
+          col.insertBefore(dragged, col.querySelector('.kanban-add'));
+        } else {
+          alert('Error al mover tarea');
+        }
+      }).catch(() => alert('Error de red'));
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+kpi,status,accion,corte,doblado_fine,doblado_heavy,soldadura,pintura
+OEE (%),OK,,85.2,88.7,75.3,80.1,70.8
+Utilización (%),OK,,82.0,85.0,72.0,78.0,68.0
+Scrap (%),OK,,2.0,1.5,3.0,2.5,4.0
+FPY (%),OK,,95.0,96.5,92.0,93.5,89.0
+Downtime (min/día),OK,,25,20,35,30,40
+Productividad (pzs/hr),OK,,6.0,4.5,3.4,3.8,4.5
+MTBF (hrs),OK,,120,150,80,95,60
+MTTR (min),OK,,30,25,45,35,55
+Rework (%),OK,,1.5,1.0,2.5,2.0,3.5
+Cumplimiento Prod. (%),OK,,92.0,95.0,85.0,88.0,78.0

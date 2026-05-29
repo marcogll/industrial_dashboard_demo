@@ -1,0 +1,45 @@
+services:
+  dashboard:
+    build: .
+    container_name: bris-dashboard
+    volumes:
+      - ./data:/app/data
+      - ./claude:/app/claude
+    environment:
+      - PORT=${PORT:-8743}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:?required}
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-bris_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:?required}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-bris_adriana}
+      - UPLOAD_SECRET=${UPLOAD_SECRET:-}
+      - APP_TITLE=${APP_TITLE:-Cadrex — Dashboard}
+      - AVAILABLE_SECONDS=${AVAILABLE_SECONDS:-39900}
+      - TAKT_SECONDS=${TAKT_SECONDS:-2216.666667}
+      - DATA_FILE=${DATA_FILE:-/app/data/stations.csv}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REQUEST_LOG_LEVEL=${REQUEST_LOG_LEVEL:-INFO}
+      - CADREX_DB_SLOW_MS=${CADREX_DB_SLOW_MS:-250}
+      - PWA_START_URL=${PWA_START_URL:-}
+      - PWA_SCOPE=${PWA_SCOPE:-}
+      - SERVICE_FQDN_DASHBOARD
+      - SERVICE_URL_DASHBOARD
+    expose:
+      - "8743"
+    labels:
+      - "traefik.docker.network=coolify"
+      - "traefik.http.services.dashboard.loadbalancer.server.port=8743"
+    restart: unless-stopped
+    networks:
+      - coolify
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8743/healthz')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  coolify:
+    external: true

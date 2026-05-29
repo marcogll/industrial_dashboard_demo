@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reporte Ejecutivo $15K</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #fff; color: #1a1a2e; font-size: 14px; line-height: 1.6; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    h2 { font-size: 20px; font-weight: 700; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+    .meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; font-size: 13px; color: #64748b; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f8fafc; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+    td.num { text-align: right; }
+    .highlight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 18px 22px; margin: 20px 0; }
+    .highlight h3 { color: #16a34a; }
+    .warn { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 18px 22px; margin: 20px 0; }
+    .warn h3 { color: #dc2626; }
+    p { margin-bottom: 10px; }
+    ul { margin: 8px 0 16px 20px; }
+    li { margin-bottom: 6px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:700px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .card h4 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .amount { font-size: 22px; font-weight: 700; color: #2563eb; }
+    @media print { .container { max-width: 100%; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Justificacion de Inversion $15,000 USD</h1>
+  <p class="subtitle">Mejora integral del sistema de produccion — Lineas Corte LASER y Doblado Fine · MD Ascend</p>
+  <div class="meta">
+    <span>Preparado: Ingenieria Industrial</span>
+    <span>Fecha: Mayo 2026</span>
+    <span>Lineas: Corte · Doblado Fine · MD</span>
+  </div>
+
+  <h2>Situacion Actual</h2>
+  <div class="warn">
+    <h3>Riesgo Operativo Inmediato</h3>
+    <p>Con los cuellos de botella actuales (Est.4 Corte a 3,953 seg y Est.6 Doblado Fine a 2,820 seg) el sistema no puede cumplir la demanda pico de 560 unidades/mes del programa MD Ascend 4RU-12RT.</p>
+  </div>
+
+  <h2>Desperdicios Identificados</h2>
+  <table>
+    <thead><tr><th>Categoria</th><th>Tiempo (seg)</th><th>%</th></tr></thead>
+    <tbody>
+      <tr><td>Trabajo productivo</td><td class="num">2,068</td><td class="num"><strong>46.1%</strong></td></tr>
+      <tr><td>Verificaciones / CTQ</td><td class="num">1,037</td><td class="num">23.1%</td></tr>
+      <tr><td>Esperas (QA / material)</td><td class="num">599</td><td class="num">13.3%</td></tr>
+      <tr><td>Retrabajo remaches</td><td class="num">399</td><td class="num">8.9%</td></tr>
+      <tr><td>Caminatas innecesarias</td><td class="num">382</td><td class="num">8.6%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Balanceo Antes vs Despues</h2>
+  <table>
+    <thead><tr><th>Estacion</th><th>CT Actual</th><th>CT Meta</th><th>Ahorro</th><th>Reduccion</th><th>Intervencion</th></tr></thead>
+    <tbody>
+      <tr><td>Est4 Sub H (Corte)</td><td class="num">3,953s</td><td class="num">2,047s</td><td class="num" style="color:#16a34a">-1,906s</td><td>48%</td><td>PM preventivo + Shadow boards</td></tr>
+      <tr><td>Est6 Ensamble (Corte)</td><td class="num">4,923s</td><td class="num">2,821s</td><td class="num" style="color:#16a34a">-2,102s</td><td>43%</td><td>QA inline + dividir pasos</td></tr>
+      <tr><td>Est7 Integracion (Corte)</td><td class="num">3,571s</td><td class="num">2,068s</td><td class="num" style="color:#16a34a">-1,503s</td><td>42%</td><td>Fixture + shadow board + QA</td></tr>
+      <tr><td>Est6 Cables (Doblado Fine)</td><td class="num">2,820s</td><td class="num">940s/op</td><td class="num" style="color:#16a34a">-1,880s</td><td>67%</td><td>+1 operador + WI visual</td></tr>
+      <tr><td>Est4 Gaskets (Doblado Fine)</td><td class="num">900s</td><td class="num">250s</td><td class="num" style="color:#16a34a">-650s</td><td>72%</td><td>Fixture gaskets base</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Throughput — Impacto por mejora</h2>
+  <table>
+    <thead><tr><th>Etapa</th><th>Pzas/turno</th></tr></thead>
+    <tbody>
+      <tr><td>Baseline actual</td><td class="num">8.0</td></tr>
+      <tr><td>+ QA inline</td><td class="num">9.0</td></tr>
+      <tr><td>+ Shadow board Est.4</td><td class="num">9.3</td></tr>
+      <tr><td>+ Fixture anti-retrabajo</td><td class="num">9.5</td></tr>
+      <tr><td>Corte OPTIMIZADO</td><td class="num" style="font-weight:700;color:#16a34a">12.4</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <h3>+55% mejora de throughput sin agregar operadores adicionales</h3>
+  </div>
+
+  <h2>Desglose de Inversion</h2>
+  <div class="grid">
+    <div class="card">
+      <h4>Fixtures & Herramental</h4>
+      <div class="amount">$5,800</div>
+      <ul>
+        <li>Fixture gaskets base Est.4 Doblado Fine</li>
+        <li>Fixture anti-retrabajo remaches Est.4 Corte</li>
+        <li>Fixture alineacion PCA Est.7 Corte</li>
+        <li>Shadow boards Est.4 Corte</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Dashboard Digital KPIs</h4>
+      <div class="amount">$3,200</div>
+      <ul>
+        <li>Monitor industrial por linea x3</li>
+        <li>Software dashboard KPIs tiempo real</li>
+        <li>Tablets QC inline (x5)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Sistema Kanban & Material</h4>
+      <div class="amount">$2,100</div>
+      <ul>
+        <li>Bins Kanban Bin1/Bin2 + etiquetas</li>
+        <li>Racks supermercado + carros</li>
+        <li>Area roja scrap + QR + trazabilidad</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Mantenimiento Preventivo</h4>
+      <div class="amount">$1,800</div>
+      <ul>
+        <li>PM remachadoras SK41H</li>
+        <li>Torquimetros digitales</li>
+        <li>Repuestos criticos stock minimo</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Capacitacion & 5S</h4>
+      <div class="amount">$1,200</div>
+      <ul>
+        <li>Instructor Lean / Massive Dynamic</li>
+        <li>Auditoria 5S + kit materiales</li>
+        <li>Diseno grafico WI por estacion</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Ergonomia & Contingencia</h4>
+      <div class="amount">$900</div>
+      <ul>
+        <li>Lift assist / conveyor gabinetes Corte</li>
+        <li>Mejora ergonomica carros Doblado Fine</li>
+        <li>Fondo contingencia (10%)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Retorno de Inversion</h2>
+  <table>
+    <thead><tr><th>Concepto</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td>Ahorro seg/ciclo (3 est. criticas Corte)</td><td class="num"><strong>5,511s</strong></td></tr>
+      <tr><td>Unidades adicionales / mes estimadas</td><td class="num">+48</td></tr>
+      <tr><td>Valor marginal por unidad</td><td class="num">$120 USD</td></tr>
+      <tr><td>Ingreso adicional / mes</td><td class="num"><strong style="color:#16a34a">$5,760</strong></td></tr>
+      <tr><td>Ingreso adicional anualizado</td><td class="num">$69,120</td></tr>
+      <tr><td>Scrap / retrabajo evitado</td><td class="num">$8,400</td></tr>
+      <tr><td>Beneficio total ano 1</td><td class="num"><strong style="color:#16a34a">$77,520</strong></td></tr>
+      <tr><td>Inversion requerida</td><td class="num">$15,000</td></tr>
+      <tr><td>ROI Ano 1</td><td class="num"><strong style="color:#2563eb">417%</strong></td></tr>
+      <tr><td>Periodo de Payback</td><td class="num"><strong>2.6 meses</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

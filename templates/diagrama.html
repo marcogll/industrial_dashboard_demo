@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block title %}Diagrama — {{ title }}{% endblock %}
+{% block page_title %}Diagrama de Operaciones{% endblock %}
+
+{% block extra_css %}
+<style>
+.diag-tabs { display:flex; gap:8px; }
+.diag-tab { padding:6px 18px; border-radius:999px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text-secondary); font:inherit; font-size:12px;
+  font-weight:600; cursor:pointer; transition:var(--transition); }
+.diag-tab.active, .diag-tab:hover { background:var(--gradient-hero); color:#fff; border-color:transparent; }
+#stationDetail { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+svg text { font-family: 'Inter', system-ui, sans-serif; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Diagrama de Operaciones</h1>
+  <p class="subtitle">Flujo de proceso y análisis espagueti por línea</p>
+</div>
+
+<div class="filters" style="margin-bottom:20px">
+  <label>Línea</label>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;" id="lineaBtns">
+    {% for linea in balanceo.keys() %}
+    <button onclick="setLinea('{{ linea }}', this)"
+            class="{{ 'active' if loop.first else '' }}">{{ linea }}</button>
+    {% endfor %}
+  </div>
+  <label style="margin-left:16px">Vista</label>
+  <div class="diag-tabs" id="vistaBtns">
+    <button class="diag-tab active" onclick="setVista('operaciones', this)">Operaciones</button>
+    <button class="diag-tab" onclick="setVista('espagueti', this)">Espagueti</button>
+  </div>
+</div>
+
+<!-- Operations view -->
+<div class="card" id="vistaOperaciones">
+  <div class="card-head">
+    <span id="opsTitle">Diagrama de Operaciones</span>
+    <span style="font-size:11px;color:var(--text-muted)" id="opsSubtitle"></span>
+  </div>
+  <div class="card-body" style="overflow-x:auto;padding-bottom:8px">
+    <svg id="svgOps" style="width:100%;min-height:300px;display:block;overflow:hidden"></svg>
+  </div>
+</div>
+
+<!-- Spaghetti view -->
+<div class="card" id="vistaEspagueti" style="display:none">
+  <div class="card-head">
+    <span id="spagTitle">Diagrama Espagueti</span>
+    <span style="font-size:11px;color:var(--text-muted)">Flujo de material entre estaciones</span>
+  </div>
+  <div class="card-body">
+    <svg id="svgSpag" style="width:100%;height:500px;display:block"></svg>
+  </div>
+</div>
+
+<!-- Station detail -->
+<div id="stationDetail" style="display:none;margin-top:16px">
+  <div class="card">
+    <div class="card-head">
+      <span id="detailTitle">Estación</span>
+      <button onclick="document.getElementById('stationDetail').style.display='none'"
+              style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px"><span class="material-symbols-outlined" style="font-size:16px">close</span></button>
+    </div>
+    <div class="card-body">
+      <div class="kpi-row" id="detailKpis"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const BALANCEO = {{ balanceo | tojson }};
+
+function statusType(row) {
+  const s = (row.status || row.status_raw || '').toUpperCase();
+  if (s.includes('CUELLO') || s.includes('CRITICO')) return 'critical';
+  if (s.includes('RIESGO') || s.includes('AVER') || s.includes('FIXTURE') || s.includes('WARNING')) return 'warning';
+  return 'ok';
+}
+
+function statusColor(row) {
+  const t = statusType(row);
+  const cs = getComputedStyle(document.documentElement);
+  if (t === 'critical') return cs.getPropertyValue('--accent-red').trim() || '#f38ba8';
+  if (t === 'warning')  return cs.getPropertyValue('--accent-yellow').trim() || '#f9e2af';
+  return cs.getPropertyValue('--accent-green').trim() || '#a6e3a1';
+}
+
+let _linea = Object.keys(BALANCEO)[0] || '';
+let _vista = 'operaciones';
+
+function setLinea(l, btn) {
+  _linea = l;
+  document.querySelectorAll('#lineaBtns button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  render();
+}
+
+function setVista(v, btn) {
+  _vista = v;
+  document.querySelectorAll('.diag-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('vistaOperaciones').style.display = v === 'operaciones' ? '' : 'none';
+  document.getElementById('vistaEspagueti').style.display   = v === 'espagueti'   ? '' : 'none';
+  render();
+}
+
+// ── SVG helpers ──────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ── Operations diagram ───────────────────────────────────
+function drawOperaciones(rows) {
+  const svg = document.getElementById('svgOps');
+  svg.innerHTML = '';
+  if (!rows.length) return;
+
+  const W = Math.max(svg.clientWidth || 900, 600);
+  const PAD = 40, TOP = 50, BAR_AREA_H = 220, LABEL_H = 60;
+  const H = TOP + BAR_AREA_H + LABEL_H;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.style.minHeight = H + 'px';
+
+  const takt   = Math.max(...rows.map(r => parseFloat(r.takt) || 0));
+  const maxCT  = Math.max(...rows.map(r => parseFloat(r.ct_actual) || 0), takt || 1);
+  const n      = rows.length;
+  const BOX_W  = Math.min(96, (W - PAD * 2) / n - 10);
+  const totalW = BOX_W * n + (n - 1) * ((W - PAD * 2 - BOX_W * n) / Math.max(n - 1, 1));
+  const GAP    = n > 1 ? (W - PAD * 2 - BOX_W * n) / (n - 1) : 0;
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'mocha';
+  const textC  = isDark ? '#cdd6f4' : '#4c4f69';
+  const mutedC = isDark ? '#6c7086' : '#8c8fa1';
+  const gridC  = isDark ? '#313244' : '#dce0e8';
+  const surfC  = isDark ? '#1e1e2e' : '#eff1f5';
+
+  // Grid lines + y-axis labels
+  [0, 25, 50, 75, 100].forEach(pct => {
+    const y = TOP + BAR_AREA_H - (pct / 100) * BAR_AREA_H;
+    const val = Math.round(maxCT * pct / 100);
+    svg.appendChild(svgEl('line', { x1: PAD, y1: y, x2: W - PAD, y2: y, stroke: gridC, 'stroke-width': 0.5 }));
+    svg.appendChild(svgEl('text', { x: PAD - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 9, fill: mutedC }, val + 's'));
+  });
+
+  // Takt reference line
+  if (takt > 0) {
+    const ty = TOP + BAR_AREA_H - (takt / maxCT) * BAR_AREA_H;
+    svg.appendChild(svgEl('line', { x1: PAD, y1: ty, x2: W - PAD, y2: ty, stroke: '#f9e2af', 'stroke-width': 1.5, 'stroke-dasharray': '6,4' }));
+    svg.appendChild(svgEl('text', { x: W - PAD, y: ty - 5, 'text-anchor': 'end', 'font-size': 9, fill: '#f9e2af', 'font-weight': 700 }, 'Takt ' + takt + 's'));
+  }
+
+  rows.forEach((row, i) => {
+    const ct     = parseFloat(row.ct_actual) || 0;
+    const x      = PAD + i * (BOX_W + GAP);
+    const barH   = maxCT > 0 ? (ct / maxCT) * BAR_AREA_H : 4;
+    const barY   = TOP + BAR_AREA_H - barH;
+    const color  = statusColor(row);
+    const labelY = TOP + BAR_AREA_H + 18;
+
+    // Bar
+    const rect = svgEl('rect', {
+      x, y: barY, width: BOX_W, height: Math.max(barH, 4),
+      rx: 5, fill: color, opacity: 0.85, cursor: 'pointer',
+      style: 'transition: opacity .15s'
+    });
+    rect.addEventListener('mouseenter', () => rect.setAttribute('opacity', '1'));
+    rect.addEventListener('mouseleave', () => rect.setAttribute('opacity', '0.85'));
+    rect.addEventListener('click', () => showDetail(row));
+    svg.appendChild(rect);
+
+    // CT label inside bar
+    if (barH > 22) {
+      svg.appendChild(svgEl('text', {
+        x: x + BOX_W / 2, y: barY + 14,
+        'text-anchor': 'middle', 'font-size': 9, fill: '#1e1e2e', 'font-weight': 700
+      }, ct + 's'));
+    }
+
+    // Arrow to next station
+    if (i < n - 1) {
+      const arrowX1 = x + BOX_W + 2;
+      const arrowX2 = x + BOX_W + GAP - 2;
+      const arrowY  = TOP + BAR_AREA_H / 2;
+      svg.appendChild(svgEl('line', { x1: arrowX1, y1: arrowY, x2: arrowX2 - 6, y2: arrowY, stroke: mutedC, 'stroke-width': 1.5, 'marker-end': 'url(#arrow)' }));
+    }
+
+    // Station number circle
+    svg.appendChild(svgEl('circle', { cx: x + BOX_W / 2, cy: labelY, r: 9, fill: color, opacity: 0.2 }));
+    svg.appendChild(svgEl('text', { x: x + BOX_W / 2, y: labelY + 4, 'text-anchor': 'middle', 'font-size': 8, fill: color, 'font-weight': 800 }, i + 1));
+
+    // Station name
+    const name = (row.estacion || '').replace(/^Est\.?\s*\d+\s*/i, '');
+    const short = name.length > 12 ? name.slice(0, 11) + '…' : name;
+    svg.appendChild(svgEl('text', {
+      x: x + BOX_W / 2, y: labelY + 18,
+      'text-anchor': 'middle', 'font-size': 9, fill: textC
+    }, short));
+  });
+
+  // Arrow marker
+  const defs = svgEl('defs', {});
+  const marker = svgEl('marker', { id: 'arrow', markerWidth: 8, markerHeight: 8, refX: 6, refY: 3, orient: 'auto' });
+  marker.appendChild(svgEl('path', { d: 'M0,0 L0,6 L8,3 z', fill: mutedC }));
+  defs.appendChild(marker);
+  svg.insertBefore(defs, svg.firstChild);
+
+  // Update subtitle
+  const cuellos = rows.filter(r => statusType(r) === 'critical').length;
+  const warns   = rows.filter(r => statusType(r) === 'warning').length;
+  document.getElementById('opsSubtitle').textContent =
+    rows.length + ' estaciones · ' + (cuellos ? cuellos + ' cuello(s) · ' : '') + (warns ? warns + ' alerta(s) · ' : '') + 'Takt ' + (takt || '—') + 's';
+}
+
+// ── Spaghetti diagram ────────────────────────────────────
+function drawEspagueti(rows) {
+  const svg = document.getElementById('svgSpag');
+  svg.innerHTML = '';
+  if (!rows.length) return;
+
+  const W   = Math.max(svg.clientWidth || 900, 600);
+  const H   = 500;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'mocha';
+  const textC  = isDark ? '#cdd6f4' : '#4c4f69';
+  const mutedC = isDark ? '#6c7086' : '#8c8fa1';
+  const surfC  = isDark ? '#1e1e2e' : '#eff1f5';
+  const borderC= isDark ? '#313244' : '#ccd0da';
+
+  // Snake layout: rows of COLS stations alternating direction
+  const COLS   = Math.ceil(rows.length / 2);
+  const BOX_W  = Math.min(120, (W - 60) / COLS - 20);
+  const BOX_H  = 68;
+  const GAP_X  = Math.max(20, (W - 60 - BOX_W * COLS) / Math.max(COLS - 1, 1));
+  const GAP_Y  = 110;
+  const startX = (W - (BOX_W * COLS + GAP_X * (COLS - 1))) / 2;
+  const startY = 40;
+
+  const pos = rows.map((_, i) => {
+    const row  = Math.floor(i / COLS);
+    const posInRow = i % COLS;
+    const col  = row % 2 === 0 ? posInRow : COLS - 1 - posInRow;
+    const x    = startX + col * (BOX_W + GAP_X);
+    const y    = startY + row * (BOX_H + GAP_Y);
+    return { x, y, cx: x + BOX_W / 2, cy: y + BOX_H / 2 };
+  });
+
+  // Flow paths
+  for (let i = 0; i < rows.length - 1; i++) {
+    const from  = pos[i];
+    const to    = pos[i + 1];
+    const color = statusColor(rows[i]);
+    // Bezier control points
+    const dx = to.cx - from.cx;
+    const dy = to.cy - from.cy;
+    const cp1x = from.cx + dx * 0.4;
+    const cp1y = from.cy + dy * 0.1;
+    const cp2x = from.cx + dx * 0.6;
+    const cp2y = to.cy   - dy * 0.1;
+
+    svg.appendChild(svgEl('path', {
+      d: `M ${from.cx} ${from.cy} C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${to.cx} ${to.cy}`,
+      fill: 'none', stroke: color, 'stroke-width': 2.5, opacity: 0.55, 'stroke-linecap': 'round'
+    }));
+
+    // Flow direction dot at midpoint
+    const t = 0.5;
+    const mx = Math.pow(1-t,3)*from.cx + 3*Math.pow(1-t,2)*t*cp1x + 3*(1-t)*t*t*cp2x + t*t*t*to.cx;
+    const my = Math.pow(1-t,3)*from.cy + 3*Math.pow(1-t,2)*t*cp1y + 3*(1-t)*t*t*cp2y + t*t*t*to.cy;
+    svg.appendChild(svgEl('circle', { cx: mx, cy: my, r: 4, fill: color, opacity: 0.9 }));
+  }
+
+  // Station boxes
+  rows.forEach((row, i) => {
+    const { x, y, cx, cy } = pos[i];
+    const color = statusColor(row);
+    const type  = statusType(row);
+
+    // Drop shadow
+    svg.appendChild(svgEl('rect', { x: x+3, y: y+3, width: BOX_W, height: BOX_H, rx: 10, fill: 'rgba(0,0,0,0.12)' }));
+
+    // Box
+    const rect = svgEl('rect', {
+      x, y, width: BOX_W, height: BOX_H, rx: 10,
+      fill: surfC, stroke: color, 'stroke-width': 2, cursor: 'pointer'
+    });
+    rect.addEventListener('click', () => showDetail(row));
+    svg.appendChild(rect);
+
+    // Top color stripe
+    svg.appendChild(svgEl('rect', { x, y, width: BOX_W, height: 5, rx: 5, fill: color }));
+    svg.appendChild(svgEl('rect', { x, y: y+3, width: BOX_W, height: 2, fill: color }));
+
+    // Est number
+    svg.appendChild(svgEl('text', {
+      x: cx, y: y+22, 'text-anchor': 'middle', 'font-size': 10, fill: color, 'font-weight': 800
+    }, 'EST ' + (i+1)));
+
+    // Name
+    const name = (row.estacion || '').replace(/^Est\.?\s*\d+\s*/i, '');
+    const short = name.length > 13 ? name.slice(0, 12) + '…' : name;
+    svg.appendChild(svgEl('text', {
+      x: cx, y: y+38, 'text-anchor': 'middle', 'font-size': 9.5, fill: textC
+    }, short));
+
+    // CT
+    const ct = parseFloat(row.ct_actual) || 0;
+    svg.appendChild(svgEl('text', {
+      x: cx, y: y+55, 'text-anchor': 'middle', 'font-size': 9, fill: mutedC
+    }, ct + 's · ' + (row.pct_utilizacion || '—')));
+
+    // Entry/exit label
+    if (i === 0) {
+      svg.appendChild(svgEl('text', { x: cx, y: y-8, 'text-anchor': 'middle', 'font-size': 9, fill: '#a6e3a1', 'font-weight': 700 }, '→ ENTRADA'));
+    }
+    if (i === rows.length - 1) {
+      svg.appendChild(svgEl('text', { x: cx, y: y-8, 'text-anchor': 'middle', 'font-size': 9, fill: cssVar('--accent-blue'), 'font-weight': 700 }, 'SALIDA →'));
+    }
+  });
+
+  // Legend
+  const lgY = H - 20;
+  [['#a6e3a1', 'OK'], ['#f9e2af', 'Alerta'], ['#f38ba8', 'Cuello']].forEach(([c, l], i) => {
+    const lx = W/2 - 100 + i * 90;
+    svg.appendChild(svgEl('circle', { cx: lx, cy: lgY, r: 5, fill: c }));
+    svg.appendChild(svgEl('text', { x: lx+10, y: lgY+4, 'font-size': 10, fill: textC }, l));
+  });
+}
+
+// ── Station detail panel ──────────────────────────────────
+function showDetail(row) {
+  document.getElementById('detailTitle').textContent = row.estacion || 'Estación';
+  const ct    = parseFloat(row.ct_actual) || 0;
+  const takt  = parseFloat(row.takt) || 0;
+  const delta = takt > 0 ? ct - takt : null;
+  const pct   = row.pct_utilizacion || (takt > 0 ? (ct/takt*100).toFixed(1)+'%' : '—');
+  const color = statusColor(row);
+  document.getElementById('detailKpis').innerHTML = `
+    <div class="kpi"><div class="label">Cycle Time</div><div class="value">${ct}s</div></div>
+    <div class="kpi"><div class="label">Takt Time</div><div class="value">${takt || '—'}s</div></div>
+    ${delta !== null ? `<div class="kpi"><div class="label">Delta</div><div class="value" style="color:${delta>0?'var(--accent-red)':'var(--accent-green)'}">${delta>0?'+':''}${delta}s</div></div>` : ''}
+    <div class="kpi"><div class="label">Utilización</div><div class="value">${pct}</div></div>
+    <div class="kpi"><div class="label">Status</div><div class="value" style="font-size:12px;color:${color}">${row.status||row.status_raw||'—'}</div></div>
+  `;
+  document.getElementById('stationDetail').style.display = '';
+  document.getElementById('stationDetail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function render() {
+  const rows = BALANCEO[_linea] || [];
+  if (_vista === 'operaciones') drawOperaciones(rows);
+  else drawEspagueti(rows);
+}
+
+window.addEventListener('resize', render);
+document.addEventListener('DOMContentLoaded', render);
+
+// Re-render on theme change
+const _origChangeTheme = window.changeTheme;
+window.changeTheme = function(t) { _origChangeTheme && _origChangeTheme(t); setTimeout(render, 220); };
+</script>
+{% endblock %}

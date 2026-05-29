@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login — {{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10; --surface: #111318; --surface2: #1a1d24; --surface3: #22262f;
+      --border: rgba(255,255,255,0.07); --text: #e8eaf0; --muted: #7c8599;
+      --accent: #3b82f6; --green: #10b981; --red: #ef4444;
+      --gradient: linear-gradient(135deg,#3b82f6 0%,#6366f1 50%,#a855f7 100%);
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 40px 36px; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    .login-logo { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; text-align: center; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
+    .login-sub { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+    .flash { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; border: 1px solid; }
+    .flash.success { border-color: var(--green); background: rgba(16,185,129,0.1); color: #34d399; }
+    .flash.danger  { border-color: var(--red);   background: rgba(239,68,68,0.1);  color: #f87171; }
+    label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
+    .input { width: 100%; padding: 11px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font: inherit; font-size: 14px; margin-bottom: 18px; outline: none; transition: border-color 0.15s; }
+    .input:focus { border-color: var(--accent); }
+    .btn { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+    .btn:hover { background: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-logo" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;"><img src="/static/massive_dynamic.svg" height="40" alt="Massive Dynamic"><span>Massive Dynamic</span></div>
+    <p class="login-sub">Sistema de Gestion de Proyectos y Mantenimiento</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('login') }}">
+      <label for="username">Usuario</label>
+      <input class="input" type="text" id="username" name="username" placeholder="marco" required autofocus>
+      <label for="password">Contraseña</label>
+      <input class="input" type="password" id="password" name="password" placeholder="••••••••" required>
+      <button class="btn" type="submit">Iniciar sesión</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+linea,estacion,ct_actual,takt,delta,pct_utilizacion,status,ops,ct_op,pct_takt
+Corte LASER,Alimentación,430,1800,-170.0,23.9,OK,2,215,11.9
+Corte LASER,Corte,506,1800,-94.0,28.1,OK,1,506,28.1
+Corte LASER,Inspección,584,1800,-16.0,32.4,OK,1,584,32.4
+Doblado Fine,P1,451,2400,-149.0,18.8,OK,1,451,18.8
+Doblado Fine,P2,481,2400,-119.0,20.0,OK,1,481,20.0
+Doblado Fine,P3,498,2400,-102.0,20.8,OK,1,498,20.8
+Doblado Fine,P4,595,2400,-5.0,24.8,OK,1,595,24.8
+Doblado Heavy,P5,571,3200,-229.0,17.8,OK,1,571,17.8
+Doblado Heavy,P6,641,3200,-159.0,20.0,OK,1,641,20.0
+Doblado Heavy,P7,717,3200,-83.0,22.4,OK,1,717,22.4
+Doblado Heavy,P8,788,3200,-12.0,24.6,OK,1,788,24.6
+Soldadura,Preparación,535,2800,-165.0,19.1,OK,2,268,9.6
+Soldadura,Soldadura MIG,582,2800,-118.0,20.8,OK,1,582,20.8
+Soldadura,Soldadura TIG,628,2800,-72.0,22.4,OK,1,628,22.4
+Soldadura,Acabado,666,2800,-34.0,23.8,OK,1,666,23.8
+Pintura,Pretratamiento,372,2200,-178.0,16.9,OK,2,186,8.5
+Pintura,Pintura polvo,450,2200,-100.0,20.5,OK,1,450,20.5
+Pintura,Curado,524,2200,-26.0,23.8,OK,1,524,23.8
+Pintura,Inspección,539,2200,-11.0,24.5,OK,1,539,24.5

@@ -1,0 +1,5 @@
+corte,doblado_fine,doblado_heavy,soldadura,pintura
+Alimentación de lámina en mesa de corte,Carga de pieza en prensa P1,Carga de pieza en prensa P5,Preparación de bordes y limpieza,Desengrase y fosfatizado
+Programación CNC y corte LASER,Doblado secuencia P1-P2-P3-P4,Doblado secuencia P5-P6-P7-P8,Soldadura MIG (cordón continuo),Aplicación de pintura polvo
+Inspección dimensional post-corte,Verificación angular con galgas,Verificación angular y dimensional,Soldadura TIG (puntos críticos),Curado en horno a 200°C x 25 min
+Clasificación y etiquetado de piezas,Etiquetado y liberación al PT,Liberación al PT con registro,Acabado y desbaste de cordones,Inspección visual y espesor

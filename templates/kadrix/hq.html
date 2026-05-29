@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}Massive Dynamic HQ{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hq-shell { display: grid; gap: 18px; }
+  .hq-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+    gap: 14px;
+    align-items: stretch;
+    margin-bottom: 2px;
+  }
+  .hq-panel {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    box-shadow: var(--shadow-soft);
+    padding: 18px;
+  }
+  .hq-panel.primary {
+    background:
+      linear-gradient(135deg, rgba(30,102,245,.10), rgba(23,146,153,.08)),
+      var(--surface);
+    border-color: rgba(30,102,245,.20);
+  }
+  .hq-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--accent-blue);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+  .hq-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .hq-heading-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--text);
+    color: var(--surface);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    box-shadow: var(--shadow-soft);
+  }
+  .hq-title {
+    margin: 0;
+    color: var(--text);
+    font-size: 22px;
+    line-height: 1.12;
+    font-weight: 850;
+    letter-spacing: 0;
+  }
+  .hq-title span {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 750;
+    margin-top: 3px;
+  }
+  .hq-subtitle {
+    max-width: 720px;
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .hq-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .hq-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--surface);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 750;
+  }
+  .hq-action.primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .hq-status-grid { display: grid; gap: 10px; }
+  .hq-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .hq-status-row:last-child { border-bottom: 0; }
+  .hq-status-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .hq-status-value { color: var(--text); font-size: 12px; font-weight: 800; text-align: right; }
+  .hq-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .hq-metric {
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-soft);
+  }
+  .hq-metric .label {
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+  }
+  .hq-metric .value {
+    color: var(--text);
+    font-size: 28px;
+    font-weight: 850;
+    line-height: 1;
+  }
+  .hq-metric .meta {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 9px;
+  }
+  .hq-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .hq-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 11px 13px;
+    border-radius: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .hq-chip strong { color: var(--text); font-size: 12px; white-space: nowrap; }
+  .hq-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 12px;
+  }
+  .hq-section-title h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+  @media(max-width: 900px) {
+    .hq-hero { grid-template-columns: 1fr; }
+    .hq-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hq-strip { grid-template-columns: 1fr; }
+  }
+  @media(max-width: 560px) {
+    .hq-panel { padding: 16px; border-radius: 12px; }
+    .hq-heading { align-items: flex-start; }
+    .hq-heading-icon { width: 38px; height: 38px; }
+    .hq-title { font-size: 19px; }
+    .hq-metrics { grid-template-columns: 1fr; gap: 8px; }
+    .hq-metric { padding: 13px; }
+    .hq-metric .value { font-size: 23px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hq-shell">
+<section class="hq-hero">
+  <div class="hq-panel primary">
+    <div class="hq-kicker"><span class="material-symbols-outlined" style="font-size:16px">hub</span> Massive Dynamic HQ</div>
+    <div class="hq-heading">
+      <div class="hq-heading-icon"><span class="material-symbols-outlined" style="font-size:24px">dashboard_customize</span></div>
+      <h1 class="hq-title">Massive Dynamic — Centro de Control <span>Datos, proyectos, Planner y Mafer conectados</span></h1>
+    </div>
+    <p class="hq-subtitle">Vista de mando para conectar capacidad, takt, cuellos, fixtures, boards de proyecto y preguntas a Mafer sin depender de una sola fuente de datos.</p>
+    <div class="hq-actions">
+      <a class="hq-action primary" href="{{ url_for('dashboard') }}"><span class="material-symbols-outlined" style="font-size:18px">monitoring</span> Dashboard actual</a>
+      <a class="hq-action" href="{% if board %}{{ url_for('massive.massive_board', board_id=board.id) }}{% else %}{{ url_for('massive.massive_hq') }}{% endif %}"><span class="material-symbols-outlined" style="font-size:18px">view_kanban</span> Board de proyecto</a>
+      <a class="hq-action" href="{{ url_for('massive.massive_activity') }}"><span class="material-symbols-outlined" style="font-size:18px">edit_note</span> Registrar actividad</a>
+    </div>
+  </div>
+  <div class="hq-panel">
+    <div class="hq-section-title" style="margin-top:0">
+      <h2><span class="material-symbols-outlined" style="font-size:18px">settings_input_component</span> Señales vivas</h2>
+    </div>
+    <div class="hq-status-grid">
+      <div class="hq-status-row">
+        <span class="hq-status-label"><span class="material-symbols-outlined" style="font-size:17px;color:var(--accent-blue)">memory</span> Mafer</span>
+        <span class="hq-status-value">{{ mafer_model }}</span>
+      </div>
+      <div class="hq-status-row">
+        <span class="hq-status-label"><span class="material-symbols-outlined" style="font-size:17px;color:var(--accent-orange)">precision_manufacturing</span> Bottleneck</span>
+        <span class="hq-status-value">{{ ops.bottleneck }}</span>
+      </div>
+      <div class="hq-status-row">
+        <span class="hq-status-label"><span class="material-symbols-outlined" style="font-size:17px;color:var(--accent-purple)">schedule</span> Turno tarde</span>
+        <span class="hq-status-value">{{ ops.tarde_events|num(0) }} evento{{ 's' if ops.tarde_events != 1 }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="hq-section-title">
+    <h2><span class="material-symbols-outlined" style="font-size:18px">monitoring</span> Dashboard actual</h2>
+    <a href="{{ url_for('dashboard') }}" style="font-size:13px;color:var(--accent-blue);text-decoration:none;font-weight:700;">Abrir detalle</a>
+  </div>
+  <div class="hq-metrics">
+    <div class="hq-metric">
+      <div class="label">Capacidad</div>
+      <div class="value" style="color:var(--accent-blue)">{{ ops.actual_units|num(1) }}</div>
+      <div class="meta">pzas/turno actual</div>
+    </div>
+    <div class="hq-metric">
+      <div class="label">Meta takt</div>
+      <div class="value" style="color:var(--accent-green)">{{ ops.target_units|num(1) }}</div>
+      <div class="meta">pzas/turno objetivo</div>
+    </div>
+    <div class="hq-metric">
+      <div class="label">Gap</div>
+      <div class="value" style="color:{% if ops.gap_units > 0 %}var(--accent-red){% else %}var(--accent-green){% endif %}">{{ ops.gap_units|num(1) }}</div>
+      <div class="meta">{{ ops.utilization|num(1) }}% utilizacion takt</div>
+    </div>
+    <div class="hq-metric">
+      <div class="label">Cuellos</div>
+      <div class="value" style="color:var(--accent-orange)">{{ ops.cuellos|num(0) }}</div>
+      <div class="meta">{{ ops.stations|num(0) }} estaciones evaluadas</div>
+    </div>
+  </div>
+  <div class="hq-strip" style="margin-top:12px">
+    <div class="hq-chip"><strong>Demanda</strong><span>{{ ops.demanda_total|num(0) }} u · pico {{ ops.demanda_pico|num(0) }}</span></div>
+    <div class="hq-chip"><strong>Kanban</strong><span>{{ ops.kanban_crit|num(0) }} crit · {{ ops.kanban_warn|num(0) }} warn</span></div>
+    <div class="hq-chip"><strong>Fixtures</strong><span>{{ fixtures_ok|num(0) }} ok · {{ fixtures_maintenance|num(0) }} mant.</span></div>
+  </div>
+</section>
+
+<!-- KPIs -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="label">Tareas activas</div>
+    <div class="value" style="color:var(--accent-blue)">{{ active_tasks|num(0) }}</div>
+    <div class="note">{{ active_tasks_pct|num(1) }}% del tablero · {{ done_tasks|num(0) }} cerradas</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Total {{ total_tasks|num(0) }}</span>
+      <span class="kpi-index">Done {{ done_tasks_pct|num(1) }}%</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="label">Fixtures operativos</div>
+    <div class="value" style="color:var(--accent-green)">{{ fixtures_ok|num(0) }}</div>
+    <div class="note">{{ fixtures_ok_pct|num(1) }}% disponibles de {{ total_fixtures|num(0) }}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Mant. {{ fixtures_maintenance_pct|num(1) }}%</span>
+      <span class="kpi-index">Inact. {{ fixtures_damaged_pct|num(1) }}%</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="label">Fixtures en mantenimiento</div>
+    <div class="value" style="color:var(--accent-yellow)">{{ fixtures_maintenance|num(0) }}</div>
+    <div class="note">{% if fixtures_maintenance %}{{ fixtures_maintenance_pct|num(1) }}% requieren atencion{% else %}0.0% en mantenimiento{% endif %}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Riesgo {{ (fixtures_maintenance + fixtures_damaged)|num(0) }}</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="label">Proyectos activos</div>
+    <div class="value" style="color:var(--accent-purple)">{{ project_active|num(0) }}</div>
+    <div class="note">{{ project_active_pct|num(1) }}% del portafolio abierto</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Total {{ project_total|num(0) }}</span>
+    </div>
+  </div>
+  <div class="kpi hero">
+    <div class="label">Tareas atrasadas</div>
+    <div class="value">{{ overdue|length|num(0) }}</div>
+    <div class="note">{% if overdue %}{{ overdue_pct|num(1) }}% del tablero requiere atencion{% else %}0.0% vencidas{% endif %}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Indice atraso {{ overdue_pct|num(1) }}%</span>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:28px;">
+  <div class="card-head">
+    <h3><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">account_tree</span> Mapa mental Massive Dynamic HQ</h3>
+    <span style="font-size:12px;color:var(--text-muted);font-weight:700;">Mafer · OpenRouter · {{ mafer_model }}</span>
+  </div>
+  <div class="card-body">
+    <div class="mind-map">
+      <div class="mind-node">
+        <h4><span class="material-symbols-outlined" style="font-size:18px">database</span> Data existente</h4>
+        <p>Balanceo, demanda, kanban, desperdicios, throughput, plan de accion, fixtures, proyectos y actividades.</p>
+        <div class="mind-list">
+          <div class="mind-chip"><strong>Operaciones</strong><span>CT, takt, cuellos</span></div>
+          <div class="mind-chip"><strong>Inventario</strong><span>alertas kanban</span></div>
+          <div class="mind-chip"><strong>Mejora</strong><span>ROI, tareas</span></div>
+        </div>
+      </div>
+      <div class="mind-node primary">
+        <h4><span class="material-symbols-outlined" style="font-size:18px">auto_awesome</span> Mafer AI</h4>
+        <p>Agente endurecido contra prompt injection que busca patrones, responde dudas y conecta ideas usando solo el contexto disponible del dashboard.</p>
+        <div class="mind-list">
+          <div class="mind-chip"><strong>Guardrails</strong><span>contexto cerrado</span></div>
+          <div class="mind-chip"><strong>Modelo actual</strong><span>{{ mafer_model }}</span></div>
+          <div class="mind-chip"><strong>Proveedor</strong><span>OpenRouter</span></div>
+        </div>
+      </div>
+      <div class="mind-node">
+        <h4><span class="material-symbols-outlined" style="font-size:18px">hub</span> Queries e ideas</h4>
+        <p>Las preguntas se cruzan con KPIs, historiales y señales de riesgo para convertir datos sueltos en decisiones accionables.</p>
+        <div class="mind-list">
+          <div class="mind-chip"><strong>Patrones</strong><span>cuellos, scrap, atraso</span></div>
+          <div class="mind-chip"><strong>Acciones</strong><span>prioridad y responsable</span></div>
+          <div class="mind-chip"><strong>Modelo futuro</strong><span>DeepSeek opcional</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Grid de módulos -->
+<div class="card-grid" style="margin-bottom: 28px;">
+  <a class="card" href="{% if board %}{{ url_for('massive.massive_board', board_id=board.id) }}{% else %}{{ url_for('massive.massive_hq') }}{% endif %}">
+    <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">dashboard</span></div>
+    <h3>Tableros Kanban</h3>
+    <p>Gestiona tareas y flujos de trabajo del equipo.</p>
+  </a>
+  <a class="card" href="{{ url_for('massive.massive_fixtures') }}">
+    <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">build</span></div>
+    <h3>Catálogo de Fixtures</h3>
+    <p>Consulta estado, línea y historial de cada fixture.</p>
+  </a>
+  <a class="card" href="{{ url_for('massive.massive_projects') }}">
+    <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">rocket_launch</span></div>
+    <h3>Proyectos de Mejora</h3>
+    <p>Seguimiento de iniciativas y su progreso.</p>
+  </a>
+  <a class="card" href="{{ url_for('massive.massive_activity') }}">
+    <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">edit_note</span></div>
+    <h3>Registro de Actividades</h3>
+    <p>Registra y consulta actividades de mantenimiento.</p>
+  </a>
+</div>
+
+<!-- Tareas atrasadas destacadas -->
+<div class="card">
+  <div class="card-head">
+    <h3><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">warning</span> Tareas Atrasadas</h3>
+    {% if board %}
+    <a href="{{ url_for('massive.massive_board', board_id=board.id) }}" style="font-size:13px;color:var(--accent-blue);text-decoration:none;font-weight:600;">Ver tablero →</a>
+    {% endif %}
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      {% if overdue %}
+      <table>
+        <thead>
+          <tr>
+            <th>Tarea</th>
+            <th>Asignado</th>
+            <th>Prioridad</th>
+            <th>Fecha Límite</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in overdue %}
+          <tr>
+            <td>{{ task.title }}</td>
+            <td>{{ task.assigned_name or 'Sin asignar' }}</td>
+            <td>
+              {% if task.priority == 'high' %}
+              <span class="badge badge-alta">ALTA</span>
+              {% elif task.priority == 'medium' %}
+              <span class="badge badge-media">MEDIA</span>
+              {% else %}
+              <span class="badge badge-baja">BAJA</span>
+              {% endif %}
+            </td>
+            <td>{{ task.due_date }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding: 28px; text-align: center; color: var(--text-muted);">
+        🎉 No hay tareas atrasadas.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

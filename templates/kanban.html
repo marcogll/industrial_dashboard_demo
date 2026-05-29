@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Kanban — {{ title }}{% endblock %}
+{% block page_title %}Kanban{% endblock %}
+{% block extra_css %}
+<style>
+.bar-track-kb {
+  height: 16px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  width: 100%;
+  max-width: 150px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  box-shadow: var(--shadow-inset);
+}
+.bar-fill-kb { height: 100%; border-radius: var(--radius-sm); transition: width 0.6s ease; }
+.bar-fill-kb.critical { background: linear-gradient(90deg, var(--accent-red), var(--ctp-yellow)); }
+.bar-fill-kb.warning { background: linear-gradient(90deg, var(--ctp-yellow), var(--ctp-yellow)); }
+.bar-fill-kb.ok { background: var(--gradient-green); }
+</style>
+{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Kanban</h1>
+    <p class="subtitle">{{ items|length }} partes con alerta activa</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Part Number</th><th>Dias restantes</th><th>Nivel</th><th>Owner</th><th>Origen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td><strong>{{ item.part_number }}</strong></td>
+              <td class="num">
+                <div class="bar-track-kb">
+                  <div class="bar-fill-kb {{ item._urgency }}" style="width:{{ [item.days_left|float / 30 * 100, 100]|min }}%"></div>
+                </div>
+                {{ item.days_left|float|round(1) }} dias
+              </td>
+              <td><span class="badge badge-{{ 'crit' if item._urgency == 'critical' else ('warn' if item._urgency == 'warning' else 'ok') }}">{{ item._urgency }}</span></td>
+              <td>{{ item.owner }}</td>
+              <td style="font-size:11px;color:var(--text-muted)">{{ item.source_file }}</td>
+            </tr>
+            {% endfor %}
+            {% if not items %}
+            <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px">Sin notificaciones kanban</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

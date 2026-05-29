@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Partes — {{ title }}{% endblock %}
+{% block page_title %}Partes / BOM{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Partes / BOM</h1>
+    <p class="subtitle">{{ parts_count }} partes unicas en el catalogo</p>
+  </div>
+
+  <form class="search-form" method="get" action="{{ url_for('partes') }}">
+    <input type="text" name="q" value="{{ search }}" placeholder="Buscar por numero de parte, descripcion o parent...">
+    <button type="submit">Buscar</button>
+    {% if search %}
+    <a href="{{ url_for('partes') }}" style="padding:10px 12px;font-size:13px;color:var(--text-secondary);text-decoration:underline;align-self:center">limpiar</a>
+    {% endif %}
+  </form>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Componente</th><th>Descripcion</th><th>Parent</th><th class="num">Cantidad</th><th>UOM</th><th class="num">On Hand</th><th class="num">Lead Time</th><th>Vendor</th><th>Programa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in bom %}
+            <tr>
+              <td><strong>{{ item.component_part }}</strong></td>
+              <td style="max-width:300px">{{ item.description }}</td>
+              <td>{{ item.parent_part }}</td>
+              <td class="num">{{ item.required_qty }}</td>
+              <td>{{ item.uom }}</td>
+              <td class="num">{{ item.on_hand }}</td>
+              <td class="num">{{ item.lead_time_days }}</td>
+              <td>{{ item.vendor_name }}</td>
+              <td>{{ item.program }}</td>
+            </tr>
+            {% endfor %}
+            {% if not bom %}
+            <tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:28px">Sin resultados{% if search %} para "{{ search }}"{% endif %}</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if bom|length == 150 %}
+  <p class="info" style="margin-top:12px">Mostrando maximo 150 resultados. Refina la busqueda si es necesario.</p>
+  {% endif %}
+{% endblock %}

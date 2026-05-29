@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+!.env.coolify.example
+!.env.coolify
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Django
+staticfiles/
+media/
+*.log
+db.sqlite3
+server.log
+
+# Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# CodeGraph
+.codegraph/
+
+# Instance data (SQLite DBs)
+vanity_hq_wrapper/instance/
+vanity_payroll/instance/
+vanity_actas/instance/
+vanity_empreq/instance/
+
+# Data files (synthetic, track for demo)
+*.backup.csv
+
+# Office files
+*.xlsx
+*.xlsm
+*.xls
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.ods
+*.odt
+*.odp
+
+# Generated design assets
+*icon_logo_favicon*
+
+# Tool caches
+.antigravitycli/
+.opencode/
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+
+# Node
+node_modules/
+
+# Session files
+session-*.md

@@ -1,0 +1,1271 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}Dashboard Maestro{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Chart containers */
+.chart-container    { position: relative; height: 260px; width: 100%; }
+.chart-container-lg { position: relative; height: 320px; width: 100%; }
+
+/* Mini KPI (small inline stats) */
+.mini-kpi { display: flex; flex-direction: column; gap: 4px; }
+.mini-kpi .label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-secondary);
+}
+.mini-kpi .value { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+
+/* Status dot */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+/* Mini KPI grid */
+.mini-kpi-grid {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.mini-kpi-card {
+  text-align: center; padding: 16px 12px; border-radius: 12px;
+  background: var(--surface-elevated); border: 1px solid var(--border-light);
+}
+.mini-kpi-card .label { font-size: 10px; color: var(--text-secondary); }
+.mini-kpi-card .value { font-size: 20px; color: var(--text); }
+
+/* Status badges */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.status-badge.ok   { background: var(--badge-ok-bg);   color: var(--badge-ok-color); }
+.status-badge.crit { background: var(--badge-crit-bg); color: var(--badge-crit-color); }
+.status-badge.warn { background: var(--badge-warn-bg); color: var(--badge-warn-color); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set total_estaciones = metrics.stations|length %}
+{% set total_cuellos = corte_cuellos + doblado_fine_cuellos %}
+{% set gap_pct = ((metrics.gap_units / metrics.target_units) * 100) if metrics.target_units else 0 %}
+{% set cuello_pct = ((total_cuellos / total_estaciones) * 100) if total_estaciones else 0 %}
+{% set demanda_pico_pct = ((demanda_pico / demanda_total) * 100) if demanda_total else 0 %}
+{% set plan_done_pct = ((plan_summary.completado / plan_summary.total) * 100) if plan_summary.total else 0 %}
+{% set fixture_total = massive.fixtures_active + massive.fixtures_maintenance %}
+{% set fixture_maint_pct = ((massive.fixtures_maintenance / fixture_total) * 100) if fixture_total else 0 %}
+
+<!-- ===== FILTRADO POR LÍNEA ===== -->
+<div class="filters" style="margin-bottom:24px;">
+  <div style="display:flex;align-items:center;gap:12px;width:100%;min-width:0;">
+    <span class="filter-label">Línea</span>
+    <div class="filter-chips">
+      <button onclick="setGroup('todas', this)"
+              class="filter-chip {{ 'active' if grupo_activo == 'todas' else '' }}">
+        <span class="chip-icon material-symbols-outlined">all_inclusive</span>
+        Todas
+        <span class="chip-count">{{ total_estaciones }}</span>
+      </button>
+      {% for linea in lineas_disponibles %}
+      <button onclick="setGroup('{{ linea.key }}', this)"
+              class="filter-chip {{ 'active' if grupo_activo == linea.key else '' }}">
+        <span class="chip-icon material-symbols-outlined">{{ linea.icon }}</span>
+        {{ linea.nombre }}
+        <span class="chip-count">{{ linea.count }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <span class="filter-meta">Takt {{ takt_seconds|num(0) }}s</span>
+  </div>
+</div>
+
+<!-- ===== FILTRADO POR PERÍODO ===== -->
+<div class="filters" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:12px;width:100%;min-width:0;flex-wrap:wrap;">
+    <span class="filter-label">Período</span>
+    <div class="filter-chips" id="periodFilters">
+      <button onclick="setPeriod('7d',this)"  class="filter-chip" data-period="7d">7 días</button>
+      <button onclick="setPeriod('30d',this)" class="filter-chip" data-period="30d">30 días</button>
+      <button onclick="setPeriod('60d',this)" class="filter-chip" data-period="60d">60 días</button>
+      <button onclick="setPeriod('90d',this)" class="filter-chip" data-period="90d">90 días</button>
+      <button onclick="setPeriod('180d',this)" class="filter-chip" data-period="180d">180 días</button>
+      <button onclick="setPeriod('all',this)" class="filter-chip active" data-period="all">Todo</button>
+    </div>
+    <span class="filter-meta" id="periodLabel">ene 5 – jun 30, 2026</span>
+  </div>
+</div>
+
+<!-- ===== KPIs POR SECCIÓN ===== -->
+
+<!-- Sección: Producción -->
+<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary)">Producción</span>
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+</div>
+<div class="kpi-row" style="margin-bottom:24px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+  <div class="kpi hero">
+    <div class="kpi-meta">
+      <span class="kpi-tag production">Producción</span>
+      <span class="trend {{ 'up' if metrics.takt_utilization >= 100 else 'down' }}">{{ metrics.takt_utilization|num(1) }}% takt</span>
+    </div>
+    <div class="label">Capacidad actual</div>
+    <div class="value">{{ metrics.actual_units|num(1) }}<span style="font-size:14px;font-weight:500;opacity:.8"> pzs</span></div>
+    <div class="note">{{ metrics.takt_utilization|num(1) }}% del objetivo takt</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Meta {{ metrics.target_units|num(1) }} pzs</span>
+      <span class="kpi-index">Turno</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag risk">Riesgo</span>
+      <span class="trend {{ 'down' if metrics.gap_units > 0 else 'up' }}">{{ gap_pct|num(1) }}% gap</span>
+    </div>
+    <div class="label">Gap vs meta</div>
+    <div class="value" style="color:{{ 'var(--accent-red)' if metrics.gap_units > 0 else 'var(--accent-green)' }}">{{ metrics.gap_units|num(1) }}<span style="font-size:14px;font-weight:500;color:var(--text-muted)"> pzs</span></div>
+    <div class="note">Meta: {{ metrics.target_units|num(1) }} pzs/turno</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">{{ 'Desmejora' if metrics.gap_units > 0 else 'En meta' }}</span>
+      <span class="kpi-index">Capacidad</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag balance">Balanceo</span>
+      <span class="trend {{ 'down' if total_cuellos > 0 else 'up' }}">{{ cuello_pct|num(1) }}% cuello</span>
+    </div>
+    <div class="label">Estaciones / Cuellos</div>
+    <div class="value" style="color:var(--accent-blue)"><span id="val-estaciones">{{ total_estaciones }}</span><span style="font-size:14px;font-weight:500;color:var(--text-muted)"> / </span><span id="val-cuellos">{{ total_cuellos|num(0) }}</span></div>
+    <div class="note">Corte LASER: <span id="val-corte-cuellos">{{ corte_cuellos|num(0) }}</span> · Doblado Fine: <span id="val-doblado-fine-cuellos">{{ doblado_fine_cuellos|num(0) }}</span></div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Corte LASER</span>
+      <span class="kpi-index">Doblado Fine</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag production">VA/NVA</span>
+      <span class="trend {{ 'up' if prod_pct >= 60 else 'warn' if prod_pct >= 45 else 'down' }}">{{ prod_pct|num(1) }}% VA</span>
+    </div>
+    <div class="label">Trabajo productivo</div>
+    <div class="value" style="color:var(--accent-green)">{{ prod_pct|num(1) }}%</div>
+    <div class="note">de tiempo total estación</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Eficiencia</span>
+      <span class="kpi-index">Proceso</span>
+    </div>
+  </div>
+</div>
+
+<!-- Sección: Demanda & Material -->
+<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary)">Demanda & Material</span>
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+</div>
+<div class="kpi-row" style="margin-bottom:24px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag material">Demanda</span>
+      <span class="trend neutral">Pico {{ demanda_pico_pct|num(1) }}%</span>
+    </div>
+    <div class="label">Demanda total MD</div>
+    <div class="value" style="color:var(--accent-purple)">{{ demanda_total|num(0) }}<span style="font-size:14px;font-weight:500;color:var(--text-muted)"> u</span></div>
+    <div class="note">Pico: {{ demanda_pico|num(0) }} u</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">MD</span>
+      <span class="kpi-index">Plan mensual</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag material">Material</span>
+      <span class="trend {{ 'down' if kanban_crit > 0 else 'up' }}">{{ (kanban_crit + kanban_warn)|num(0) }} alertas</span>
+    </div>
+    <div class="label">Alertas Kanban críticas</div>
+    <div class="value" style="color:{% if kanban_crit > 0 %}var(--accent-red){% else %}var(--accent-green){% endif %}">{{ kanban_crit|num(0) }}</div>
+    <div class="note">{{ kanban_warn|num(0) }} advertencia{{ 's' if kanban_warn != 1 }}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">≤3 días</span>
+      <span class="kpi-index">Abasto</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag risk">Herramental</span>
+      <span class="trend {{ 'down' if herramientas_criticas|length > 0 else 'up' }}">{{ herramientas_criticas|length|num(0) }} crítico</span>
+    </div>
+    <div class="label">Herramental crítico</div>
+    <div class="value" style="color:{% if herramientas_criticas|length > 0 %}var(--accent-orange){% else %}var(--accent-green){% endif %}">{{ herramientas_criticas|length|num(0) }}</div>
+    <div class="note">requieren atención</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Fixtures</span>
+      <span class="kpi-index">Mantenimiento</span>
+    </div>
+  </div>
+</div>
+
+<!-- Sección: Gestión & Finanzas -->
+<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary)">Gestión & Finanzas</span>
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+</div>
+<div class="kpi-row" style="margin-bottom:28px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag finance">Finanzas</span>
+      <span class="trend {{ 'warn' if massive.budget.pct > 0 else 'neutral' }}">{{ massive.budget.pct|num(1) }}% usado</span>
+    </div>
+    <div class="label">Presupuesto $15K</div>
+    <div class="value" style="color:var(--accent-orange)">{{ massive.budget.pct|num(1) }}%</div>
+    <div class="note">${{ massive.budget.spent|num(0) }} / ${{ massive.budget.total|num(0) }}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">CAPEX</span>
+      <span class="kpi-index">ROI</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag plan">Plan</span>
+      <span class="trend {{ 'up' if plan_done_pct >= 80 else 'down' if plan_summary.alta > 0 else 'neutral' }}">{{ plan_done_pct|num(1) }}% done</span>
+    </div>
+    <div class="label">Acciones plan ALTA</div>
+    <div class="value" style="color:var(--accent-red)">{{ plan_summary.alta|num(0) }}</div>
+    <div class="note">{{ plan_summary.total|num(0) }} total · {{ plan_summary.completado|num(0) }} completadas</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Prioridad alta</span>
+      <span class="kpi-index">Ejecución</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag planner">Planner</span>
+      <span class="trend {{ 'down' if massive.fixtures_maintenance > 0 else 'up' }}">{{ fixture_maint_pct|num(1) }}% mant.</span>
+    </div>
+    <div class="label">Fixtures activos</div>
+    <div class="value" style="color:var(--accent-green)">{{ massive.fixtures_active|num(0) }}</div>
+    <div class="note">{{ massive.fixtures_maintenance|num(0) }} en mantenimiento</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Activos</span>
+      <span class="kpi-index">Tooling</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag fizzy">Massive Dynamic</span>
+      <span class="trend {{ 'down' if massive.tasks_overdue > 0 else 'up' }}">{{ massive.tasks_overdue|num(0) }} vencidas</span>
+    </div>
+    <div class="label">Proyectos / Tareas</div>
+    <div class="value" style="color:var(--accent-blue)">{{ massive.projects_active|num(0) }}<span style="font-size:14px;font-weight:500;color:var(--text-muted)"> / </span>{{ massive.tasks_total|num(0) }}</div>
+    <div class="note">{{ massive.tasks_overdue|num(0) }} tarea{{ 's' if massive.tasks_overdue != 1 }} vencida{{ 's' if massive.tasks_overdue != 1 }}</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Actividades</span>
+      <span class="kpi-index">Seguimiento</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESUMEN EJECUTIVO (KPIs del Excel Maestro) ===== -->
+{% if dashboard_resumen %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head"><h3>Resumen Ejecutivo — KPIs Líneas</h3></div>
+  <div class="card-body">
+    <div class="kpi-row" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+      {% for kpi in dashboard_resumen %}
+      <div class="mini-kpi" style="text-align:center;padding:12px;border-radius:12px;background:var(--bg-secondary)">
+        <div class="label" style="font-size:9px">{{ kpi.indicador }}</div>
+        <div class="value" style="font-size:18px"{% if loop.index == 3 %} id="kpiOee"{% elif loop.index == 4 %} id="kpiScrap"{% elif loop.index == 5 %} id="kpiDowntime"{% elif loop.index == 6 %} id="kpiTotalProd"{% endif %}>{% if loop.index == 3 %}{{ prod_filtered.oee_pct }}{% elif loop.index == 4 %}{{ prod_filtered.scrap_pct }}{% elif loop.index == 5 %}{{ prod_filtered.avg_downtime }}{% elif loop.index == 6 %}{{ prod_filtered.total_prod }}{% else %}{{ kpi.valor }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== ESTADO DE LÍNEAS — NF vs SM ===== -->
+{% if dashboard_estaciones %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head"><h3>Estado de Líneas — Líneas de Producción</h3></div>
+  <div class="card-body">
+    <div class="two-col">
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent-blue)">Corte LASER</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Est</th><th>Descripción</th><th class="num">CT (s)</th><th class="num">%Takt</th><th>Estado</th></tr></thead>
+            <tbody>
+              {% for e in dashboard_estaciones %}
+              <tr>
+                <td>{{ e.corte_estacion }}</td>
+                <td>{{ e.corte_descripcion }}</td>
+                <td class="num">{{ e.corte_ct_seg }}</td>
+                <td class="num">{{ e.corte_pct_takt }}</td>
+                <td><span class="status-dot" style="background:{{ 'var(--accent-green)' if e.corte_estado and 'Holgura' in e.corte_estado else 'var(--accent-red)' }}"></span>{{ e.corte_estado or '' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent-orange)">Doblado Fine</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Est</th><th>Descripción</th><th class="num">CT (s)</th><th class="num">%Takt</th><th>Estado</th></tr></thead>
+            <tbody>
+              {% for e in dashboard_estaciones %}
+              <tr>
+                <td>{{ e.doblado_fine_estacion }}</td>
+                <td>{{ e.doblado_fine_descripcion }}</td>
+                <td class="num">{{ e.doblado_fine_ct_seg }}</td>
+                <td class="num">{{ e.doblado_fine_pct_takt }}</td>
+                <td><span class="status-dot" style="background:{{ 'var(--accent-green)' if e.doblado_fine_estado and 'Holgura' in e.doblado_fine_estado else 'var(--accent-red)' }}"></span>{{ e.doblado_fine_estado or '' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== PRODUCCIÓN DIARIA (filtrable por período) ===== -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head"><h3>Producción diaria</h3></div>
+  <div class="card-body">
+    <div class="chart-container-lg"><canvas id="chartDailyProd"></canvas></div>
+  </div>
+</div>
+
+<!-- ===== CYCLE TIME + DESPERDICIOS ===== -->
+<div class="two-col" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-head"><h3>Cycle Time por estación</h3></div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartCt"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Composición del tiempo</h3></div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartWaste"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DEMANDA + THROUGHPUT ===== -->
+<div class="two-col" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-head"><h3>Demanda mensual</h3></div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartDemand"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Throughput — Impacto de mejoras</h3></div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartThroughput"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOGÍSTICA ===== -->
+<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-secondary)">Logística</span>
+  <div style="flex:1;height:1px;background:var(--border)"></div>
+</div>
+<div class="kpi-row" style="margin-bottom:24px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag production">OTD</span>
+      <span class="trend {{ 'up' if logistica_kpis and logistica_kpis[-1].otd_pct|float >= 88 else 'warn' }}">{{ logistica_kpis[-1].otd_pct|num(1) if logistica_kpis else '—' }}%</span>
+    </div>
+    <div class="label">On-Time Delivery</div>
+    <div class="value" style="color:var(--accent-blue)">{{ logistica_kpis[-1].otd_pct|num(1) if logistica_kpis else '—' }}<span style="font-size:14px;font-weight:500;color:var(--text-muted)">%</span></div>
+    <div class="note">{{ logistica_kpis[0].otd_pct|num(1) if logistica_kpis else '—' }}% ene · {{ logistica_kpis[-1].otd_pct|num(1) if logistica_kpis else '—' }}% dic</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Entregas</span>
+      <span class="kpi-index">Cumplimiento</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag material">Fill Rate</span>
+      <span class="trend {{ 'up' if logistica_kpis and logistica_kpis[-1].fill_rate_pct|float >= 90 else 'warn' }}">{{ logistica_kpis[-1].fill_rate_pct|num(1) if logistica_kpis else '—' }}%</span>
+    </div>
+    <div class="label">Fill Rate</div>
+    <div class="value" style="color:var(--accent-green)">{{ logistica_kpis[-1].fill_rate_pct|num(1) if logistica_kpis else '—' }}<span style="font-size:14px;font-weight:500;color:var(--text-muted)">%</span></div>
+    <div class="note">Promedio anual</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Disponibilidad</span>
+      <span class="kpi-index">Inventario</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag risk">Past Due</span>
+      <span class="trend {{ 'down' if ordenes_abiertas|selectattr('status','equalto','Atrasada')|list|length <= 10 else 'down' }}">{{ ordenes_abiertas|selectattr('status','equalto','Atrasada')|list|length }} atrasadas</span>
+    </div>
+    <div class="label">Órdenes vencidas</div>
+    <div class="value" style="color:var(--accent-red)">{{ ordenes_abiertas|selectattr('status','equalto','Atrasada')|list|length }}</div>
+    <div class="note">{{ ordenes_abiertas|selectattr('status','equalto','Pendiente')|list|length }} pendientes · {{ ordenes_abiertas|length }} total</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Cliente</span>
+      <span class="kpi-index">Retraso</span>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-meta">
+      <span class="kpi-tag finance">Backorder</span>
+      <span class="trend neutral">${{ logistica_kpis[-1].backorder_usd|num(0) if logistica_kpis else '0' }}</span>
+    </div>
+    <div class="label">Backorder (dic)</div>
+    <div class="value" style="color:var(--accent-orange)">${{ logistica_kpis[-1].backorder_usd|num(0) if logistica_kpis else '0' }}</div>
+    <div class="note">Promedio retraso: {{ logistica_kpis[-1].avg_delay_days|num(1) if logistica_kpis else '—' }} días</div>
+    <div class="kpi-detail">
+      <span class="kpi-index">Valor</span>
+      <span class="kpi-index">Riesgo</span>
+    </div>
+  </div>
+</div>
+
+<!-- Past due orders table -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head">
+    <h3>Órdenes con Retraso — Past Due</h3>
+    <span style="font-size:12px;color:var(--text-muted);font-weight:500">{{ ordenes_abiertas|selectattr('status','equalto','Atrasada')|list|length }} atrasadas · {{ ordenes_abiertas|selectattr('status','equalto','Pendiente')|list|length }} pendientes</span>
+  </div>
+  <div class="card-body">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Orden</th><th>Cliente</th><th>Producto</th><th class="num">Cantidad</th>
+            <th>Prometida</th><th>Real</th><th class="num">Retraso</th><th class="num">Valor</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in ordenes_abiertas|sort(attribute='dias_retraso', reverse=True) %}
+          {% if o.status != 'Completada' %}
+          <tr>
+            <td>{{ o.orden }}</td>
+            <td>{{ o.cliente }}</td>
+            <td>{{ o.producto }}</td>
+            <td class="num">{{ o.cantidad }}</td>
+            <td>{{ o.fecha_prometida }}</td>
+            <td>{{ o.fecha_real }}</td>
+            <td class="num" style="color:{{ 'var(--accent-red)' if o.dias_retraso|int > 7 else 'var(--accent-yellow)' }}">{{ o.dias_retraso }}d</td>
+            <td class="num">${{ o.valor }}</td>
+            <td><span class="status-badge {{ 'crit' if o.status == 'Atrasada' else 'warn' }}">{{ o.status }}</span></td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FLUJO DE PROCESO ===== -->
+{% if flujo_proceso %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head"><h3>Flujo de Proceso — Líneas de Producción</h3></div>
+  <div class="card-body">
+    <div class="three-col" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent-blue)">Corte LASER</h4>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          {% for f in flujo_proceso %}
+          {% if f.corte %}
+          <div style="padding:8px 10px;border-radius:8px;background:var(--bg-secondary);font-size:11px;line-height:1.4">{{ f.corte|replace('\n', '<br>')|safe }}</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent-orange)">Doblado Fine</h4>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          {% for f in flujo_proceso %}
+          {% if f.doblado_fine %}
+          <div style="padding:8px 10px;border-radius:8px;background:var(--bg-secondary);font-size:11px;line-height:1.4">{{ f.doblado_fine|replace('\n', '<br>')|safe }}</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--accent-purple)">Doblado Heavy</h4>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          {% for f in flujo_proceso %}
+          {% if f.doblado_heavy %}
+          <div style="padding:8px 10px;border-radius:8px;background:var(--bg-secondary);font-size:11px;line-height:1.4">{{ f.doblado_heavy|replace('\n', '<br>')|safe }}</div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== PLAN DE ACCION + CADREX ===== -->
+<div class="two-col" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-head"><h3>Plan de acción — Resumen</h3></div>
+    <div class="card-body">
+      <div class="kpi-row" style="margin-bottom:16px; grid-template-columns: repeat(4, 1fr);">
+        <div class="mini-kpi"><div class="label">Total</div><div class="value">{{ plan_summary.total|num(0) }}</div></div>
+        <div class="mini-kpi"><div class="label">Alta</div><div class="value" style="color:var(--accent-red)">{{ plan_summary.alta|num(0) }}</div></div>
+        <div class="mini-kpi"><div class="label">Media</div><div class="value" style="color:var(--accent-yellow)">{{ plan_summary.media|num(0) }}</div></div>
+        <div class="mini-kpi"><div class="label">Baja</div><div class="value" style="color:var(--accent-green)">{{ plan_summary.baja|num(0) }}</div></div>
+      </div>
+      <div class="chart-container"><canvas id="chartPlan"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <h3>Planner — Massive Dynamic</h3>
+      <a href="{{ url_for('massive.massive_hq') }}" style="font-size:12px;color:var(--accent-blue);text-decoration:none;font-weight:700">Abrir HQ →</a>
+    </div>
+    <div class="card-body">
+      <div class="planner-panel">
+        <div class="planner-stats">
+          <div class="planner-stat">
+            <div class="label">Tareas abiertas</div>
+            <div class="value" style="color:var(--accent-purple)">{{ massive.tasks_total|num(0) }}</div>
+          </div>
+          <div class="planner-stat">
+            <div class="label">Vencidas</div>
+            <div class="value" style="color:{{ 'var(--accent-red)' if massive.tasks_overdue > 0 else 'var(--accent-green)' }}">{{ massive.tasks_overdue|num(0) }}</div>
+          </div>
+          <div class="planner-stat">
+            <div class="label">Actividades 7d</div>
+            <div class="value" style="color:var(--accent-teal)">{{ massive.activities_week|length|num(0) }}</div>
+          </div>
+        </div>
+
+        {% if massive.tasks_by_status %}
+        <div class="kpi-detail" style="margin-top:0;padding-top:0">
+          {% for st in massive.tasks_by_status %}
+          <span class="kpi-index">{{ st.status }} {{ st.n|num(0) }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if massive.planner_tasks %}
+        <div class="planner-list">
+          {% for task in massive.planner_tasks %}
+          <div class="planner-task">
+            <div>
+              <div class="planner-task-title">#{{ task.id }} · {{ task.title }}</div>
+              <div class="planner-task-meta">
+                <span>{{ task.status }}</span>
+                <span>{{ task.assignee }}</span>
+                <span>{{ task.due_date or 'Sin fecha' }}</span>
+              </div>
+            </div>
+            <span class="planner-priority {{ task.priority or 'medium' }}">{{ task.priority or 'medium' }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;color:var(--text-muted);padding:18px;border-radius:var(--radius-md);background:var(--bg-secondary);border:1px solid var(--border-light)">
+          Sin tasks del planner. Usa <code>planner task-create</code> o Massive Dynamic HQ para crear la primera.
+        </div>
+        {% endif %}
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a class="btn btn-secondary" href="{{ url_for('massive.massive_activity') }}"><span class="material-symbols-outlined" style="font-size:16px">edit_note</span> Actividad</a>
+          <a class="btn btn-secondary" href="{{ url_for('massive.massive_hq') }}"><span class="material-symbols-outlined" style="font-size:16px">view_kanban</span> Board</a>
+        </div>
+
+        {% if massive.activities_week %}
+        <div class="chart-container" style="height:210px"><canvas id="chartActivities"></canvas></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ROI + KANBAN ===== -->
+<div class="two-col" style="margin-bottom:20px">
+  <div class="card">
+    <div class="card-head"><h3>ROI — Presupuesto $15K</h3></div>
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text-secondary)">Comprometido</span>
+        <span style="font-size:13px;font-weight:700">${{ massive.budget.spent|num(0) }} / ${{ massive.budget.total|num(0) }}</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:16px"><div class="fill" style="width:{{ massive.budget.pct }}%"></div></div>
+      <div class="chart-container"><canvas id="chartRoi"></canvas></div>
+      {% if massive.improvements %}
+      <div style="margin-top:14px">
+        <div class="label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:8px">Top Mejoras</div>
+        {% for imp in massive.improvements %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:12px">
+          <span>{{ imp.title }}</span>
+          <span style="font-weight:700;color:var(--accent-green)">${{ (imp.expected_savings_usd_annual or 0)|num(0) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Alertas Kanban y material</h3></div>
+    <div class="card-body">
+      <div class="kpi-row" style="margin-bottom:16px; grid-template-columns: repeat(2, 1fr);">
+        <div class="mini-kpi"><div class="label">Críticas ≤3 días</div><div class="value" style="color:var(--accent-red)">{{ kanban_crit|num(0) }}</div></div>
+        <div class="mini-kpi"><div class="label">Advertencia ≤7 días</div><div class="value" style="color:var(--accent-yellow)">{{ kanban_warn|num(0) }}</div></div>
+      </div>
+      <div class="chart-container"><canvas id="chartKanban"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REPORTE EJECUTIVO $15K ===== -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-head"><h3>Reporte Ejecutivo — Inversión $15K USD</h3></div>
+  <div class="card-body">
+    <div class="kpi-row" style="margin-bottom:20px">
+      {% for r in roi %}
+      {% if r.concepto in ['Beneficio total ano 1', 'ROI Ano 1', 'Periodo de Payback'] %}
+      <div class="kpi hero">
+        <div class="label">{{ r.concepto }}</div>
+        <div class="value">{% if r.concepto == 'ROI Ano 1' %}{{ r.valor }}%{% elif r.concepto == 'Periodo de Payback' %}{{ r.valor }} meses{% else %}${{ r.valor|num(0) }}{% endif %}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <h4 style="font-size:13px;font-weight:700;margin-bottom:12px">Desglose de inversión</h4>
+    <div class="bars">
+      {% for inv in inversion %}
+      <div class="bar">
+        <div class="bar-label">{{ inv.categoria }}</div>
+        <div class="bar-track">
+          <div class="bar-fill hero" style="width:{{ (inv.monto|float / 15000 * 100)|round }}%">${{ inv.monto|num(0) }}</div>
+        </div>
+        <div class="bar-val">{{ (inv.monto|float / 15000 * 100)|round }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="two-col" style="margin-top:20px">
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Throughput — Antes vs Después</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Etapa</th><th class="num">Pzas/turno</th></tr></thead>
+            <tbody>
+              {% for tp in throughput %}
+              <tr>
+                <td>{{ tp.etapa }}</td>
+                <td class="num"><strong>{{ tp.pzas_hr|float|num(1) }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Retorno de inversión</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Concepto</th><th class="num">Valor</th></tr></thead>
+            <tbody>
+              {% for r in roi %}
+              <tr>
+                <td>{{ r.concepto }}</td>
+                <td class="num">{% if r.concepto == 'ROI Ano 1' %}<strong style="color:var(--accent-blue)">{{ r.valor }}%</strong>{% elif r.concepto == 'Periodo de Payback' %}<strong style="color:var(--accent-green)">{{ r.valor }} meses</strong>{% elif r.concepto in ['Inversion requerida', 'Valor marginal por unidad'] %}${{ r.valor|num(0) }}{% else %}<strong>${{ r.valor|num(0) }}</strong>{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETALLE ESTACIONES ===== -->
+<div class="card">
+  <div class="card-head"><h3>Detalle de Estaciones — Capacidad</h3></div>
+  <div class="card-body">
+    <div class="bars">
+      {% for s in metrics.stations %}
+      <div class="bar">
+        <div class="bar-label">{{ s.raw.station_name }}</div>
+        <div class="bar-track">
+          <div class="bar-fill {{ 'crit' if s.status == 'critical' else ('warn' if s.status == 'warning' else 'ok') }}" style="width:{{ s.bar_width }}%">{{ s.raw.capacity_per_hour|num(1) }} pzs/h</div>
+        </div>
+        <div class="bar-val" style="color:{{ 'var(--accent-red)' if s.takt_gap > 0 else 'var(--accent-green)' }}">{{ '+' if s.takt_gap > 0 }}{{ s.takt_gap|num(0) }}s</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+/* Chart modal */
+.chart-modal {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+}
+.chart-modal.active { display: flex; }
+.chart-modal-content {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px; width: 90vw; max-width: 800px;
+  max-height: 85vh; position: relative; box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.chart-modal-close {
+  position: absolute; top: 12px; right: 12px; width: 36px; height: 36px;
+  border-radius: 50%; border: 1px solid var(--border); background: var(--surface-elevated);
+  color: var(--text); font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: all 0.2s;
+}
+.chart-modal-close:hover { background: var(--accent-red); color: #fff; border-color: var(--accent-red); }
+.chart-modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+.chart-modal-body { position: relative; height: 400px; }
+.chart-modal-table { margin-top: 16px; max-height: 200px; overflow-y: auto; }
+.chart-modal-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.chart-modal-table th { padding: 8px 12px; text-align: left; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+.chart-modal-table td { padding: 6px 12px; border-bottom: 1px solid var(--border-light); color: var(--text); }
+.chart-modal-table tr:hover td { background: var(--surface-elevated); }
+
+/* Clickable chart cards */
+.chart-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+.chart-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
+.chart-card .card-head { display: flex; justify-content: space-between; align-items: center; }
+.expand-icon {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  padding: 4px 10px; border-radius: var(--radius-xl);
+  border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; transition: var(--transition); user-select: none;
+}
+.expand-icon:hover, .chart-card:hover .expand-icon {
+  color: var(--accent-purple); border-color: var(--accent-purple);
+  background: var(--badge-info-bg);
+}
+</style>
+
+<!-- Chart Modal -->
+<div class="chart-modal" id="chartModal" onclick="if(event.target===this)closeChartModal()">
+  <div class="chart-modal-content">
+    <button class="chart-modal-close" onclick="closeChartModal()">✕</button>
+    <div class="chart-modal-title" id="chartModalTitle"></div>
+    <div class="chart-modal-body"><canvas id="chartModalCanvas"></canvas></div>
+    <div class="chart-modal-table" id="chartModalTable"></div>
+  </div>
+</div>
+
+<script>
+function initCharts() {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not loaded — CSP or network issue');
+    return;
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'mocha';
+
+  /* Catppuccin palette for charts */
+  const c = isDark ? {
+    peach:'#fab387', pink:'#f5c2e7', blue:'#89b4fa', lavender:'#b4befe',
+    green:'#a6e3a1', teal:'#94e2d5', sky:'#89dceb', sapphire:'#74c7ec',
+    red:'#f38ba8',  maroon:'#eba0ac', yellow:'#f9e2af', mauve:'#cba6f7',
+    flamingo:'#f2cdcd', rosewater:'#f5e0dc',
+    overlay0:'#6c7086', subtext0:'#a6adc8', surface0:'#313244', surface1:'#45475a',
+    base:'#1e1e2e', mantle:'#181825',
+  } : {
+    peach:'#fe640b', pink:'#ea76cb', blue:'#1e66f5', lavender:'#7287fd',
+    green:'#40a02b', teal:'#179299', sky:'#04a5e5', sapphire:'#209fb5',
+    red:'#d20f39',  maroon:'#e64553', yellow:'#df8e1d', mauve:'#8839ef',
+    flamingo:'#dd7878', rosewater:'#dc8a78',
+    overlay0:'#9ca0b0', subtext0:'#6c6f85', surface0:'#ccd0da', surface1:'#bcc0cc',
+    base:'#eff1f5', mantle:'#e6e9ef',
+  };
+
+  const gridColor   = c.surface0;
+  const tickColor   = c.subtext0;
+  const tooltipBg   = isDark ? c.surface1 : c.base;
+  const tooltipText = isDark ? '#cdd6f4'  : '#4c4f69';
+  const borderClr   = isDark ? 'rgba(205,214,244,0.1)' : 'rgba(76,79,105,0.1)';
+
+  /* Shared chart defaults */
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.color = tickColor;
+
+  const defaultTooltip = {
+    backgroundColor: tooltipBg,
+    titleColor: tooltipText, bodyColor: tooltipText,
+    borderColor: borderClr, borderWidth: 1,
+    cornerRadius: 12, padding: 12,
+    titleFont: { size: 13, weight: '700' }, bodyFont: { size: 12 },
+    displayColors: true, boxPadding: 4,
+  };
+
+  const defaultInteraction = { mode: 'index', intersect: false };
+
+  const defaultScales = {
+    x: { grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 11 } } },
+    y: { grid: { color: gridColor, drawBorder: false }, ticks: { color: tickColor, font: { size: 11 } }, beginAtZero: true },
+  };
+
+  /* Modal */
+  let modalChart = null;
+  window.openChartModal = function(chartId, title, chartConfig, tableData) {
+    const modal = document.getElementById('chartModal');
+    document.getElementById('chartModalTitle').textContent = title;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+    modalChart = new Chart(document.getElementById('chartModalCanvas'), {
+      ...chartConfig,
+      options: { ...chartConfig.options, responsive: true, maintainAspectRatio: false }
+    });
+    if (tableData && tableData.length) {
+      let html = '<table><thead><tr>';
+      Object.keys(tableData[0]).forEach(k => { html += `<th>${k}</th>`; });
+      html += '</tr></thead><tbody>';
+      tableData.forEach(row => {
+        html += '<tr>'; Object.values(row).forEach(v => { html += `<td>${v}</td>`; }); html += '</tr>';
+      });
+      html += '</tbody></table>';
+      document.getElementById('chartModalTable').innerHTML = html;
+    } else {
+      document.getElementById('chartModalTable').innerHTML = '';
+    }
+  };
+
+  window.closeChartModal = function() {
+    document.getElementById('chartModal').classList.remove('active');
+    document.body.style.overflow = '';
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+  };
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChartModal(); });
+
+  /* Make a card + canvas clickable and inject expand button */
+  function makeClickable(canvasId, title, getConfig, getTableData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const card = canvas.closest('.card');
+    if (!card) return;
+    card.classList.add('chart-card');
+    const head = card.querySelector('.card-head');
+    if (head && !head.querySelector('.expand-icon')) {
+      const btn = document.createElement('span');
+      btn.className = 'expand-icon';
+      btn.innerHTML = '⛶&nbsp;Expandir';
+      btn.onclick = (e) => { e.stopPropagation(); openChartModal(canvasId, title, getConfig(), getTableData()); };
+      head.appendChild(btn);
+    }
+    canvas.addEventListener('click', () => openChartModal(canvasId, title, getConfig(), getTableData()));
+  }
+
+  /* ── 0. Producción diaria (filtrable por período) ────── */
+  window.dailyProdChart = null;
+  const dailyProdLabels = [{% for d in prod_timeseries %}'{{ d.fecha }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const dailyProdData   = [{% for d in prod_timeseries %}{{ d.producido }}{% if not loop.last %},{% endif %}{% endfor %}];
+  const dailyProdMeta   = [{% for d in prod_timeseries %}{{ d.meta }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+  const dailyProdConfig = {
+    type: 'bar',
+    data: {
+      labels: dailyProdLabels,
+      datasets: [
+        { label: 'Producido', data: dailyProdData, backgroundColor: c.blue, borderRadius: 4, borderSkipped: false, order: 2 },
+        { label: 'Meta', data: dailyProdMeta, type: 'line', borderColor: c.red, backgroundColor: 'transparent',
+          pointRadius: 0, borderWidth: 2, tension: 0, fill: false, order: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: tickColor, font: { size: 11 } } }, tooltip: defaultTooltip },
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 9 }, maxRotation: 45 } },
+        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } },
+      },
+    }
+  };
+  const dprCanvas = document.getElementById('chartDailyProd');
+  if (dprCanvas) {
+    window.dailyProdChart = new Chart(dprCanvas, dailyProdConfig);
+    makeClickable('chartDailyProd', 'Producción diaria', () => ({
+      ...dailyProdConfig,
+      data: { ...dailyProdConfig.data,
+        labels: window.dailyProdChart.data.labels,
+        datasets: window.dailyProdChart.data.datasets,
+      },
+    }), () => window.dailyProdChart.data.labels.map((l, i) => ({
+      Fecha: l,
+      Producido: window.dailyProdChart.data.datasets[0].data[i],
+      Meta: window.dailyProdChart.data.datasets[1].data[i],
+    })));
+  }
+
+  /* ── 1. CT por estación ───────────────────────────────── */
+  {% if metrics.stations %}
+  const ctLabels  = [{% for s in metrics.stations %}'{{ s.raw.station_name }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const ctData    = [{% for s in metrics.stations %}{{ s.raw.time_seconds }}{% if not loop.last %},{% endif %}{% endfor %}];
+  const ctStatus  = [{% for s in metrics.stations %}'{{ s.status }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const ctColors  = ctStatus.map(s => s === 'critical' ? c.red : s === 'warning' ? c.yellow : c.blue);
+  const ctTakt    = {{ takt_seconds }};
+
+  const ctConfig = {
+    type: 'bar',
+    data: {
+      labels: ctLabels,
+      datasets: [
+        { label: 'CT Actual (s)', data: ctData, backgroundColor: ctColors, borderRadius: 8, borderSkipped: false },
+        { label: 'Takt', data: Array(ctLabels.length).fill(ctTakt), type: 'line',
+          borderColor: c.mauve, borderWidth: 2, borderDash: [6,4], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: defaultInteraction,
+      plugins: {
+        legend: { display: true, labels: { boxWidth: 10, font: { size: 11 }, color: tickColor } },
+        tooltip: defaultTooltip
+      },
+      scales: defaultScales
+    }
+  };
+  new Chart(document.getElementById('chartCt'), ctConfig);
+  makeClickable('chartCt', 'Cycle Time por Estación', () => ctConfig, () =>
+    ctLabels.map((l, i) => ({ 'Estación': l, 'CT (s)': ctData[i], 'Takt (s)': ctTakt, 'Gap (s)': (ctData[i]-ctTakt).toFixed(0), 'Status': ctStatus[i] }))
+  );
+  {% endif %}
+
+  /* ── 2. Desperdicios ──────────────────────────────────── */
+  {% if desperdicios %}
+  const wasteLabels = [{% for d in desperdicios %}'{{ d.categoria }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const wasteData   = [{% for d in desperdicios %}{{ d.pct }}{% if not loop.last %},{% endif %}{% endfor %}];
+  const wastePalette = [c.peach, c.blue, c.red, c.yellow, c.mauve, c.teal, c.flamingo, c.sky];
+
+  const wasteConfig = {
+    type: 'doughnut',
+    data: {
+      labels: wasteLabels,
+      datasets: [{ data: wasteData, backgroundColor: wastePalette.slice(0, wasteLabels.length),
+        borderWidth: 2, borderColor: isDark ? '#313244' : '#eff1f5', hoverOffset: 14 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, color: tickColor } },
+        tooltip: { ...defaultTooltip, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+      }
+    }
+  };
+  new Chart(document.getElementById('chartWaste'), wasteConfig);
+  makeClickable('chartWaste', 'Composición del Tiempo', () => wasteConfig, () =>
+    wasteLabels.map((l, i) => ({ 'Categoría': l, 'Porcentaje': wasteData[i] + '%' }))
+  );
+  {% endif %}
+
+  /* ── 3. Demanda mensual ───────────────────────────────── */
+  {% if demanda %}
+  const demandLabels  = ['Dic', 'Ene', 'Feb', 'Mar', 'Abr', 'May'];
+  const demandPalette = [c.peach, c.blue, c.green, c.mauve, c.red, c.yellow];
+
+  const demandConfig = {
+    type: 'line',
+    data: {
+      labels: demandLabels,
+      datasets: [
+        {% for d in demanda %}
+        {
+          label: '{{ d.programa }}',
+          data: [{{ d.dic or 0 }}, {{ d.ene or 0 }}, {{ d.feb or 0 }}, {{ d.mar or 0 }}, {{ d.abr or 0 }}, {{ d.may or 0 }}],
+          borderColor: demandPalette[{{ loop.index0 }} % demandPalette.length],
+          backgroundColor: demandPalette[{{ loop.index0 }} % demandPalette.length] + '28',
+          fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8, borderWidth: 2.5,
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: defaultInteraction,
+      plugins: {
+        legend: { display: true, labels: { boxWidth: 10, font: { size: 11 }, color: tickColor } },
+        tooltip: defaultTooltip
+      },
+      scales: defaultScales
+    }
+  };
+  new Chart(document.getElementById('chartDemand'), demandConfig);
+  makeClickable('chartDemand', 'Demanda Mensual', () => demandConfig, () => {
+    const rows = [];
+    {% for d in demanda %}
+    ['Dic','Ene','Feb','Mar','Abr','May'].forEach((m, i) => {
+      const vals = [{{ d.dic or 0 }}, {{ d.ene or 0 }}, {{ d.feb or 0 }}, {{ d.mar or 0 }}, {{ d.abr or 0 }}, {{ d.may or 0 }}];
+      rows.push({ 'Programa': '{{ d.programa }}', 'Mes': m, 'Demanda': vals[i] });
+    });
+    {% endfor %}
+    return rows;
+  });
+  {% endif %}
+
+  /* ── 4. Throughput ────────────────────────────────────── */
+  {% if throughput %}
+  const tpLabels = [{% for t in throughput %}'{{ t.etapa }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const tpData   = [{% for t in throughput %}{{ t.pzas_hr }}{% if not loop.last %},{% endif %}{% endfor %}];
+  const tpColors = tpData.map((_, i) => i === tpData.length - 1 ? c.green : c.blue);
+
+  const tpConfig = {
+    type: 'bar',
+    data: {
+      labels: tpLabels,
+      datasets: [{ label: 'Pzas/turno', data: tpData, backgroundColor: tpColors, borderRadius: 8, borderSkipped: false, barPercentage: 0.6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: defaultTooltip },
+      scales: defaultScales
+    }
+  };
+  new Chart(document.getElementById('chartThroughput'), tpConfig);
+  makeClickable('chartThroughput', 'Throughput — Impacto de Mejoras', () => tpConfig, () =>
+    tpLabels.map((l, i) => ({ 'Etapa': l, 'Pzas/turno': tpData[i] }))
+  );
+  {% endif %}
+
+  /* ── 5. Plan de acción ────────────────────────────────── */
+  const planConfig = {
+    type: 'bar',
+    data: {
+      labels: ['ALTA', 'MEDIA', 'BAJA'],
+      datasets: [
+        { label: 'Pendiente',  data: [{{ plan_summary.alta }}, {{ plan_summary.media }}, {{ plan_summary.baja }}], backgroundColor: c.overlay0, borderRadius: 6 },
+        { label: 'Completado', data: [{{ plan_summary.completado }}, {{ plan_summary.completado }}, {{ plan_summary.completado }}], backgroundColor: c.green, borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: {
+        legend: { display: true, labels: { boxWidth: 10, font: { size: 11 }, color: tickColor } },
+        tooltip: defaultTooltip
+      },
+      scales: {
+        x: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+        y: { stacked: true, grid: { display: false }, ticks: { color: tickColor } }
+      }
+    }
+  };
+  new Chart(document.getElementById('chartPlan'), planConfig);
+  makeClickable('chartPlan', 'Plan de Acción — Resumen', () => planConfig, () => [
+    { 'Prioridad': 'ALTA',  'Pendiente': {{ plan_summary.alta }},  'Completado': {{ plan_summary.completado }} },
+    { 'Prioridad': 'MEDIA', 'Pendiente': {{ plan_summary.media }}, 'Completado': {{ plan_summary.completado }} },
+    { 'Prioridad': 'BAJA',  'Pendiente': {{ plan_summary.baja }},  'Completado': {{ plan_summary.completado }} },
+  ]);
+
+  /* ── 6. Actividades ───────────────────────────────────── */
+  {% if massive.activities_week %}
+  const actLabels = [{% for a in massive.activities_week %}'{{ a.activity_type }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const actData   = [{% for a in massive.activities_week %}{{ a.total_min }}{% if not loop.last %},{% endif %}{% endfor %}];
+  const actPalette = [c.peach, c.blue, c.green, c.mauve, c.red, c.teal];
+
+  const actConfig = {
+    type: 'doughnut',
+    data: {
+      labels: actLabels,
+      datasets: [{ data: actData, backgroundColor: actPalette.slice(0, actLabels.length),
+        borderWidth: 2, borderColor: isDark ? '#313244' : '#eff1f5', hoverOffset: 14 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, color: tickColor } },
+        tooltip: { ...defaultTooltip, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} min` } }
+      }
+    }
+  };
+  new Chart(document.getElementById('chartActivities'), actConfig);
+  makeClickable('chartActivities', 'Actividades — Última Semana', () => actConfig, () =>
+    actLabels.map((l, i) => ({ 'Actividad': l, 'Duración (min)': actData[i] }))
+  );
+  {% endif %}
+
+  /* ── 7. ROI ───────────────────────────────────────────── */
+  {% if massive.improvements %}
+  const roiLabels = [{% for imp in massive.improvements %}'{{ imp.title[:15] }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const roiData   = [{% for imp in massive.improvements %}{{ imp.expected_savings_usd_annual or 0 }}{% if not loop.last %},{% endif %}{% endfor %}];
+
+  const roiConfig = {
+    type: 'bar',
+    data: {
+      labels: roiLabels,
+      datasets: [{ label: 'Ahorro Anual ($)', data: roiData, backgroundColor: c.green, borderRadius: 8, barPercentage: 0.6, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...defaultTooltip, callbacks: { label: ctx => ` $${ctx.parsed.y.toLocaleString()}` } } },
+      scales: defaultScales
+    }
+  };
+  new Chart(document.getElementById('chartRoi'), roiConfig);
+  makeClickable('chartRoi', 'ROI — Ahorro por Mejora', () => roiConfig, () =>
+    roiLabels.map((l, i) => ({ 'Mejora': l, 'Ahorro Anual': '$' + roiData[i].toLocaleString() }))
+  );
+  {% endif %}
+
+  /* ── 8. Kanban ────────────────────────────────────────── */
+  const kanbanConfig = {
+    type: 'bar',
+    data: {
+      labels: ['Críticas ≤3d', 'Advertencia ≤7d', 'OK'],
+      datasets: [{ label: 'Alertas',
+        data: [{{ kanban_crit }}, {{ kanban_warn }}, {{ 1 if kanban_crit == 0 and kanban_warn == 0 else 0 }}],
+        backgroundColor: [c.red, c.yellow, c.green],
+        borderRadius: 8, borderSkipped: false, barPercentage: 0.5
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false }, tooltip: defaultTooltip },
+      scales: {
+        x: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+        y: { grid: { display: false }, ticks: { color: tickColor } }
+      }
+    }
+  };
+  new Chart(document.getElementById('chartKanban'), kanbanConfig);
+  makeClickable('chartKanban', 'Alertas Kanban', () => kanbanConfig, () => [
+    { 'Tipo': 'Críticas (≤3 días)',    'Cantidad': {{ kanban_crit }} },
+    { 'Tipo': 'Advertencia (≤7 días)', 'Cantidad': {{ kanban_warn }} },
+  ]);
+}
+
+/* Restore period filter after charts are ready */
+function restorePeriod() {
+  const u = new URL(window.location.href);
+  const from = u.searchParams.get('from');
+  const to = u.searchParams.get('to');
+  if (from && to) {
+    const totalDays = Math.round((new Date(to) - new Date(from)) / (1000*60*60*24));
+    let match = 'all';
+    if (totalDays <= 7) match = '7d';
+    else if (totalDays <= 30) match = '30d';
+    else if (totalDays <= 60) match = '60d';
+    else if (totalDays <= 90) match = '90d';
+    else if (totalDays <= 180) match = '180d';
+    const chip = document.querySelector(`#periodFilters .filter-chip[data-period="${match}"]`);
+    if (chip) setPeriod(match, chip);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { initCharts(); restorePeriod(); });
+} else {
+  initCharts(); restorePeriod();
+}
+
+function setGroup(group, btn) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const params = new URLSearchParams();
+  params.set('grupo', group);
+  // Carry over period params
+  const u = new URL(window.location.href);
+  if (u.searchParams.has('from')) params.set('from', u.searchParams.get('from'));
+  if (u.searchParams.has('to'))   params.set('to',   u.searchParams.get('to'));
+  window.location.href = `/?${params}`;
+}
+
+/* ── Period filter ────────────────────────── */
+const DATA_START = '2026-01-05';
+const DATA_END   = '2026-12-31';
+const today      = DATA_END;
+
+function periodDates(period) {
+  const end = new Date(today);
+  switch (period) {
+    case '7d':   return { from: shiftDate(end, -7),  to: end };
+    case '30d':  return { from: shiftDate(end, -30), to: end };
+    case '60d':  return { from: shiftDate(end, -60), to: end };
+    case '90d':  return { from: shiftDate(end, -90), to: end };
+    case '180d': return { from: shiftDate(end, -180),to: end };
+    default:     return { from: null, to: null };
+  }
+}
+
+function shiftDate(d, days) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + days);
+  return r;
+}
+
+function fmtDate(d) {
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function fmtShort(d) {
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d.getDate()} ${months[d.getMonth()]}, ${d.getFullYear()}`;
+}
+
+function setPeriod(period, btn) {
+  document.querySelectorAll('#periodFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  var fromStr = '', toStr = '';
+  if (period !== 'all') {
+    var end = new Date(DATA_END);
+    var days = parseInt(period);
+    var start = new Date(end);
+    start.setDate(start.getDate() - days);
+    fromStr = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
+    toStr = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
+  }
+
+  var months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  document.getElementById('periodLabel').textContent =
+    period === 'all' ? 'Todo el período' : start.getDate() + ' ' + months[start.getMonth()] + ', ' + start.getFullYear() + ' \u2013 ' + end.getDate() + ' ' + months[end.getMonth()] + ', ' + end.getFullYear();
+
+  var u = new URL(window.location.href);
+  if (fromStr) { u.searchParams.set('from', fromStr); } else { u.searchParams.delete('from'); }
+  if (toStr)   { u.searchParams.set('to', toStr);   } else { u.searchParams.delete('to'); }
+  window.history.replaceState({}, '', u);
+
+  var params = new URLSearchParams();
+  if (fromStr) params.set('from', fromStr);
+  if (toStr)   params.set('to', toStr);
+
+  var url1 = '/api/produccion/metrics?' + params;
+  var url2 = '/api/produccion/timeseries?' + params;
+
+  fetch(url1).then(function(r) { return r.json(); }).then(function(m) {
+    document.getElementById('kpiTotalProd').textContent = m.total_producido.toLocaleString();
+    document.getElementById('kpiOee').textContent = (m.avg_oee * 100).toFixed(1);
+    document.getElementById('kpiScrap').textContent = m.scrap_rate.toFixed(1);
+    document.getElementById('kpiDowntime').textContent = m.total_downtime_min > 0 && m.rows > 0
+      ? (m.total_downtime_min / m.rows).toFixed(1) : '0';
+  }).catch(function(err) { console.error('Period metrics error:', err); });
+
+  fetch(url2).then(function(r) { return r.json(); }).then(function(ts) {
+    if (window.dailyProdChart) {
+      var labels = [], prod = [], meta = [];
+      for (var i = 0; i < ts.length; i++) {
+        labels.push(ts[i].fecha);
+        prod.push(ts[i].producido);
+        meta.push(ts[i].meta);
+      }
+      window.dailyProdChart.data.labels = labels;
+      window.dailyProdChart.data.datasets[0].data = prod;
+      window.dailyProdChart.data.datasets[1].data = meta;
+      window.dailyProdChart.update('none');
+    }
+  }).catch(function(err) { console.error('Period timeseries error:', err); });
+}
+
+</script>
+{% endblock %}

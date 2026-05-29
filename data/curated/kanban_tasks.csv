@@ -1,0 +1,6 @@
+id,title,column_name,priority,assignee,due_date
+1,Reducir setup Corte LASER,In Progress,high,Mario Gómez,2026-06-15
+2,Implementar TPM Doblado Fine,Done,high,José López,2026-05-30
+3,Balancear estaciones Pintura,Todo,medium,Luis Fernández,2026-07-01
+4,Estandarizar soldadura MIG,In Progress,high,Ana Martínez,2026-06-10
+5,Capacitar operadores SMED,Todo,medium,Karla Ruiz,2026-06-20

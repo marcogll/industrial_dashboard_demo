@@ -1,0 +1,16 @@
+indicador,valor
+Takt Promedio (seg),2480
+CT Promedio (seg),2210
+OEE Global (%),80.7
+Scrap Global (%),1.4
+Downtime Promedio (min/orden),29.4
+Producción Total 12 meses (pzs),46865
+Utilización Promedio (%),78.3
+Productividad (pzs/operator/hr),4.2
+Tasa de Defectos (PPM),12500
+MTBF (hrs),96
+MTTR (min),45
+Costo por Unidad ($),12.8
+On-Time Delivery (%),86.5
+Fill Rate (%),91.2
+Past Due Orders,18

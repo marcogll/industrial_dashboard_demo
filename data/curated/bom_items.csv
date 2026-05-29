@@ -1,0 +1,54 @@
+part_number,description,category,unit,client,programa
+MD-BAS-001-B,Base gabinete acero 14Ga,Estructura,pza,Honda,GABINETE-2026-B
+MD-BAS-002-B,Refuerzo base gabinete,Estructura,pza,Honda,GABINETE-2026-B
+MD-BAS-003-B,Tornillo M8x20,Sujeción,pza,Honda,GABINETE-2026-B
+MD-BAS-004-B,Tornillo M6x16,Sujeción,pza,Honda,GABINETE-2026-B
+MD-BAS-005-B,Arandela plana 8mm,Sujeción,pza,Honda,GABINETE-2026-B
+MD-BAS-006-B,Tuerca M8,Sujeción,pza,Honda,GABINETE-2026-B
+MD-SOP-001-A,Soporte chasis acero 12Ga,Estructura,pza,Toyota,CHASIS-2026-A
+MD-SOP-002-A,Refuerzo soporte chasis,Estructura,pza,Toyota,CHASIS-2026-A
+MD-SOP-003-A,Buje soporte 20mm,Componente,pza,Toyota,CHASIS-2026-A
+MD-SOP-004-A,Perno M10x25,Sujeción,pza,Toyota,CHASIS-2026-A
+MD-SOP-005-A,Arandela presión 10mm,Sujeción,pza,Toyota,CHASIS-2026-A
+MD-SOP-006-A,Etiqueta identificación,Consumible,pza,Toyota,CHASIS-2026-A
+MD-PAN-001-C,Panel lateral acero 16Ga,Estructura,pza,Mitsubishi Heavy Industries,PANEL-2026-C
+MD-PAN-002-C,Refuerzo panel lateral,Estructura,pza,Mitsubishi Heavy Industries,PANEL-2026-C
+MD-PAN-003-C,Tornillo M5x12,Sujeción,pza,Mitsubishi Heavy Industries,PANEL-2026-C
+MD-PAN-004-C,Clip fijación panel,Sujeción,pza,Mitsubishi Heavy Industries,PANEL-2026-C
+MD-BRA-001-D,Bracket refuerzo acero 10Ga,Estructura,pza,Denso,BRACKET-2026-D
+MD-BRA-002-D,Tornillo M12x30,Sujeción,pza,Denso,BRACKET-2026-D
+MD-BRA-003-D,Tuerca M12,Sujeción,pza,Denso,BRACKET-2026-D
+MD-BRA-004-D,Arandela plana 12mm,Sujeción,pza,Denso,BRACKET-2026-D
+MD-BRA-005-D,Protector anticorrosivo,Consumible,ml,Denso,BRACKET-2026-D
+MD-MON-001-E,Montante rack acero 12Ga,Estructura,pza,Yazaki,RACK-2026-E
+MD-MON-002-E,Base montante,Estructura,pza,Yazaki,RACK-2026-E
+MD-MON-003-E,Tornillo M8x16,Sujeción,pza,Yazaki,RACK-2026-E
+MD-MON-004-E,Tuerca M8,Sujeción,pza,Yazaki,RACK-2026-E
+MD-MON-005-E,Nivelador montante,Componente,pza,Yazaki,RACK-2026-E
+MD-MON-006-E,Tapón plástico,Componente,pza,Yazaki,RACK-2026-E
+MD-TAP-001-F,Tapa blindaje acero 8Ga,Estructura,pza,Toyota,BLINDAJE-2026-F
+MD-TAP-002-F,Bisagra tapa blindaje,Componente,pza,Toyota,BLINDAJE-2026-F
+MD-TAP-003-F,Manija tapa,Componente,pza,Toyota,BLINDAJE-2026-F
+MD-TAP-004-F,Tornillo M6x20,Sujeción,pza,Toyota,BLINDAJE-2026-F
+MD-TAP-005-F,Cerrojo tapa,Componente,pza,Toyota,BLINDAJE-2026-F
+MD-ESC-001-G,Escuadra unión acero 14Ga,Estructura,pza,Honda,ESCUADRA-2026-G
+MD-ESC-002-G,Tornillo M10x25,Sujeción,pza,Honda,ESCUADRA-2026-G
+MD-ESC-003-G,Tuerca M10,Sujeción,pza,Honda,ESCUADRA-2026-G
+MD-ESC-004-G,Arandela presión 10mm,Sujeción,pza,Honda,ESCUADRA-2026-G
+MD-PLACA-001-H,Placa base acero 6Ga,Estructura,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-002-H,Refuerzo placa base,Estructura,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-003-H,Tornillo M16x40,Sujeción,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-004-H,Tuerca M16,Sujeción,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-005-H,Arandela plana 16mm,Sujeción,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-006-H,Placa niveladora,Componente,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-007-H,Anclaje expansivo M16,Sujeción,pza,Mitsubishi Heavy Industries,PLACA-2026-H
+MD-PLACA-008-H,Sello neopreno,Consumible,m,Mitsubishi Heavy Industries,PLACA-2026-H
+PIN-001,Pin de posicionamiento 10mm,Herramienta,pza,General,HERR-2026
+PIN-002,Pin de posicionamiento 12mm,Herramienta,pza,General,HERR-2026
+DIS-001,"Disco corte 4.5""",Consumible,pza,General,CONS-2026
+DIS-002,"Disco desbaste 7""",Consumible,pza,General,CONS-2026
+GAS-001,Gas Argón (cilindro),Consumible,pza,General,CONS-2026
+GAS-002,Gas CO2 (cilindro),Consumible,pza,General,CONS-2026
+VAR-001,Pintura polvo negro,Consumible,kg,General,CONS-2026
+VAR-002,Pintura polvo gris,Consumible,kg,General,CONS-2026
+VAR-003,Desengrasante industrial,Consumible,L,General,CONS-2026

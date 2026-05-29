@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="es" data-theme="latte">
+<head>
+  <script>try{var t=localStorage.getItem('theme')||'system';if(t==='system')t=window.matchMedia('(prefers-color-scheme:dark)').matches?'mocha':'latte';document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ title }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <!-- Progressive Web App -->
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <meta name="theme-color" content="#1e66f5">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='md_pwa_icon.jpg') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">S</div>
+      <div class="logo-text">Massive Dynamic</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Principal</div>
+      <a class="nav-item {% if nav_active == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+        <span class="nav-icon material-symbols-outlined">dashboard</span> Dashboard
+      </a>
+      <a class="nav-item {% if nav_active == 'produccion' %}active{% endif %}" href="{{ url_for('produccion') }}">
+        <span class="nav-icon material-symbols-outlined">factory</span> Produccion
+      </a>
+      <a class="nav-item {% if nav_active == 'analytics' %}active{% endif %}" href="{{ url_for('massive.massive_analytics') }}">
+        <span class="nav-icon material-symbols-outlined">analytics</span> Analytics
+      </a>
+      <a class="nav-item {% if nav_active == 'plan' %}active{% endif %}" href="{{ url_for('plan') }}">
+        <span class="nav-icon material-symbols-outlined">task_alt</span> Plan de Accion
+      </a>
+
+      <div class="nav-section-title">Operaciones</div>
+      <a class="nav-item {% if nav_active == 'partes' %}active{% endif %}" href="{{ url_for('partes') }}">
+        <span class="nav-icon material-symbols-outlined">inventory_2</span> Partes
+      </a>
+      <a class="nav-item {% if nav_active == 'kanban' %}active{% endif %}" href="{{ url_for('kanban') }}">
+        <span class="nav-icon material-symbols-outlined">view_kanban</span> Kanban
+      </a>
+      <a class="nav-item {% if nav_active == 'diagrama' %}active{% endif %}" href="{{ url_for('diagrama') }}">
+        <span class="nav-icon material-symbols-outlined">account_tree</span> Diagrama
+      </a>
+      <a class="nav-item {% if nav_active == 'datos' %}active{% endif %}" href="{{ url_for('datos') }}">
+        <span class="nav-icon material-symbols-outlined">dataset</span> Datos
+      </a>
+      <a class="nav-item {% if nav_active == 'massive' %}active{% endif %}" href="{{ url_for('massive.massive_hq') }}">
+        <span class="nav-icon material-symbols-outlined">hub</span> Massive Dynamic HQ
+      </a>
+
+      <div class="sidebar-art" id="sidebarArt">
+        <div class="sidebar-line-card">
+          <div class="sidebar-line-head">
+            <span class="sidebar-line-name">MD Data</span>
+            <span class="sidebar-line-badge" style="background:rgba(137,180,250,.18);color:#89b4fa">sync</span>
+          </div>
+          <div class="sidebar-art-copy">Cargando estado de lineas, cuellos y alertas.</div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="avatar">
+          {{ (session.get('display_name') or session.get('user') or 'U')[0]|upper }}
+        </div>
+        <div class="user-info">
+          <div class="name">{{ session.get('display_name') or session.get('user') or 'Usuario' }}</div>
+          <div class="role">{{ session.get('role', 'viewer')|capitalize }}</div>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <a href="{{ url_for('logout') }}" class="icon-btn" title="Cerrar sesión"><span class="material-symbols-outlined" style="font-size:14px">logout</span></a>
+      </div>
+      <div class="sidebar-easter-egg">
+        <a href="https://soul23.mx" target="_blank" rel="noopener" title="soul23.mx" tabindex="-1" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"><g transform="matrix(1.1094293,0,0,1.1094293,-75.792124,-37.254045)"><path d="M 457.73432,587.62626 V 457.86788 h 61.06276 61.06276 v -24.80674 -24.80676 h 20.99033 20.99032 V 362.45731 316.66024 H 563.64005 505.4396 v 23.85264 23.85264 h -23.85264 -23.85264 v -45.79708 -45.79706 h 104.95162 104.95163 v 117.355 117.35501 H 586.53859 505.4396 v 77.28254 77.28257 h 37.21013 c 28.44267,0 37.23366,-0.56203 37.31003,-2.38526 0.0549,-1.31189 0.0134,-13.33364 -0.0939,-26.71496 l -0.19379,-24.3297 h 43.98275 43.98274 v 54.38402 54.38403 H 562.68594 457.73432 Z m 249.97569,75.37434 v -54.38402 h 36.25603 36.256 v 26.71496 26.71496 h 51.52171 51.52171 V 584.76393 507.48139 H 857.5046 831.74375 v -23.85265 -23.85265 h 25.76085 25.76086 v -71.55792 -71.55793 h -51.52171 -51.52171 v 23.85264 23.85264 h -36.256 -36.25603 v -45.79708 -45.79706 h 123.07964 123.07961 v 93.50236 93.50235 h -20.9903 -20.99033 v 22.89854 22.89854 h 20.99033 20.9903 V 611.47889 717.38463 H 830.78965 707.71001 Z M 364.23195,569.49824 v -37.21011 h 25.76086 25.76085 v 37.21011 37.21013 h -25.76085 -25.76086 z m 343.47806,-136.4371 v -24.80676 h 36.25603 36.256 v 24.80676 24.80674 h -36.256 -36.25603 z" fill="currentColor"/><path d="m 105.76045,662.0465 v -55.33813 h 28.62317 28.62317 v 27.66906 27.66907 h 65.51526 c 36.03339,0 65.87306,-0.35659 66.31035,-0.79242 0.4373,-0.43582 0.55259,-23.19124 0.25622,-50.5676 l -0.53887,-49.77518 h -20.9285 -20.92852 v -25.76085 -25.76086 h -44.84297 -44.84297 v -26.71496 -26.71495 h -28.62317 -28.62317 v -91.59416 -91.59414 h 124.03374 124.03374 v 45.79706 45.79708 h -29.57728 -29.57728 v -24.3297 -24.32969 h -64.81628 -64.81628 l -0.53996,46.11673 c -0.29699,25.36422 -0.11068,46.08588 0.41415,46.04817 0.52476,-0.0378 9.32639,0.0329 19.55917,0.15743 l 18.60506,0.22592 v 24.80676 24.80674 h 47.70529 47.70529 v 23.85265 23.85264 h 27.66906 27.66906 V 611.47889 717.38463 H 229.79419 105.76045 Z" fill="currentColor"/><path d="m 363.61768,465.78724 v -37.21011 h 25.76086 25.76085 v 37.21011 37.21013 h -25.76085 -25.76086 z" fill="currentColor"/></g></svg>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Header -->
+    <header class="header">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+      <h1 class="header-title">{% block page_title %}Dashboard{% endblock %}</h1>
+
+      <div class="header-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search...">
+      </div>
+
+      <button class="btn btn-primary header-new-btn">+ New Project</button>
+
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" id="themeToggle">
+          <button class="theme-btn" data-theme="system" title="Sistema" onclick="changeTheme('system')"><span class="material-symbols-outlined" style="font-size:16px">desktop_windows</span></button>
+          <button class="theme-btn" data-theme="latte" title="Claro" onclick="changeTheme('latte')"><span class="material-symbols-outlined" style="font-size:16px">light_mode</span></button>
+          <button class="theme-btn" data-theme="mocha" title="Oscuro" onclick="changeTheme('mocha')"><span class="material-symbols-outlined" style="font-size:16px">dark_mode</span></button>
+        </div>
+        <button class="icon-btn-lg" id="notifBtn" onclick="toggleNotifications()" title="Notificaciones">
+          <span class="material-symbols-outlined" style="font-size:18px">notifications</span>
+          <span class="badge-count" id="notifBadge" style="display:none">0</span>
+        </button>
+        <!-- Notification Panel -->
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">
+            <span style="font-weight:700;font-size:14px">Alertas Kanban</span>
+            <a href="{{ url_for('kanban') }}" style="font-size:12px;color:var(--accent-blue);text-decoration:none">Ver todo →</a>
+          </div>
+          <div class="notif-body" id="notifBody">
+            <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Cargando...</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Bottom Navigation (mobile app-like) -->
+  <nav class="bottom-nav">
+    <a class="bottom-nav-item {% if nav_active == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+      <span class="bn-icon material-symbols-outlined">dashboard</span>
+      <span>Inicio</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'produccion' %}active{% endif %}" href="{{ url_for('produccion') }}">
+      <span class="bn-icon material-symbols-outlined">factory</span>
+      <span>Prod</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'analytics' %}active{% endif %}" href="{{ url_for('massive.massive_analytics') }}">
+      <span class="bn-icon material-symbols-outlined">analytics</span>
+      <span>Análisis</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'plan' %}active{% endif %}" href="{{ url_for('plan') }}">
+      <span class="bn-icon material-symbols-outlined">task_alt</span>
+      <span>Plan</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'partes' %}active{% endif %}" href="{{ url_for('partes') }}">
+      <span class="bn-icon material-symbols-outlined">inventory_2</span>
+      <span>Partes</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'kanban' %}active{% endif %}" href="{{ url_for('kanban') }}">
+      <span class="bn-icon material-symbols-outlined">view_kanban</span>
+      <span>Kanban</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'diagrama' %}active{% endif %}" href="{{ url_for('diagrama') }}">
+      <span class="bn-icon material-symbols-outlined">account_tree</span>
+      <span>Diagrama</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'datos' %}active{% endif %}" href="{{ url_for('datos') }}">
+      <span class="bn-icon material-symbols-outlined">dataset</span>
+      <span>Datos</span>
+    </a>
+    <a class="bottom-nav-item {% if nav_active == 'massive' %}active{% endif %}" href="{{ url_for('massive.massive_hq') }}">
+      <span class="bn-icon material-symbols-outlined">hub</span>
+      <span>HQ</span>
+    </a>
+    <button class="bottom-nav-item" id="moreBtn" onclick="toggleMoreMenu()" aria-label="Más">
+      <span class="bn-icon material-symbols-outlined">more_horiz</span>
+      <span>Más</span>
+    </button>
+  </nav>
+</div>
+{% block extra_js %}{% endblock %}
+
+<!-- More Menu Panel (mobile) — outside layout to avoid stacking issues -->
+<div class="more-panel" id="morePanel">
+  <div class="more-header">Más opciones</div>
+  <a class="more-item" href="{{ url_for('massive.massive_hq') }}">
+    <span class="more-icon material-symbols-outlined">apps</span>
+    <span>Massive Dynamic HQ</span>
+  </a>
+  <div class="more-divider"></div>
+  <button class="more-item" type="button" onclick="changeTheme('system'); event.stopPropagation(); toggleMoreMenu();">
+    <span class="more-icon material-symbols-outlined">desktop_windows</span>
+    <span>Tema: Sistema</span>
+  </button>
+  <button class="more-item" type="button" onclick="changeTheme('latte'); event.stopPropagation(); toggleMoreMenu();">
+    <span class="more-icon material-symbols-outlined">light_mode</span>
+    <span>Tema: Claro</span>
+  </button>
+  <button class="more-item" type="button" onclick="changeTheme('mocha'); event.stopPropagation(); toggleMoreMenu();">
+    <span class="more-icon material-symbols-outlined">dark_mode</span>
+    <span>Tema: Oscuro</span>
+  </button>
+  <div class="more-divider"></div>
+  <a class="more-item" href="{{ url_for('logout') }}" onclick="event.stopPropagation();">
+    <span class="more-icon material-symbols-outlined">logout</span>
+    <span style="color:var(--accent-red)">Cerrar sesión</span>
+  </a>
+</div>
+
+<!-- ── AI Chat Widget ──────────────────────────────────────── -->
+<div id="chatWidget">
+  <div id="chatPanel" role="dialog" aria-label="Mafer — Asistente">
+    <div class="chat-head">
+      <div class="chat-head-avatar"><span class="material-symbols-outlined" style="font-size:20px">auto_awesome</span></div>
+      <div class="chat-head-info">
+        <div class="chat-head-name">Mafer — Asistente</div>
+        <div class="chat-head-model" id="chatModelLabel">claude-3-haiku</div>
+      </div>
+      <button class="chat-head-close" onclick="toggleChat()" aria-label="Cerrar"><span class="material-symbols-outlined" style="font-size:18px">close</span></button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg assistant">Hola, soy Mafer 👋 Puedo ayudarte a entender los datos del dashboard. ¿Qué quieres saber?</div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" rows="1" placeholder="Pregunta sobre la producción..." maxlength="2000"></textarea>
+      <button id="chatSendBtn" onclick="sendChat()" aria-label="Enviar"><span class="material-symbols-outlined" style="font-size:18px">send</span></button>
+    </div>
+  </div>
+  <button id="chatToggleBtn" onclick="toggleChat()" aria-label="Abrir asistente IA"><span class="material-symbols-outlined" style="font-size:22px">auto_awesome</span></button>
+</div>
+
+<script>
+window.MD_URLS = {
+  chatHistory: "{{ url_for('api_chat_history') }}",
+  chat: "{{ url_for('api_chat') }}",
+  lineasStatus: "{{ url_for('api_lineas_status') }}",
+  notifications: "{{ url_for('api_notifications') }}",
+  serviceWorker: "{{ url_for('service_worker') }}"
+};
+
+(function() {
+  var _history = [];
+  var _busy    = false;
+
+  function toggleChat() {
+    var panel = document.getElementById('chatPanel');
+    var btn   = document.getElementById('chatToggleBtn');
+    var open  = panel.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    if (open) {
+      document.getElementById('chatInput').focus();
+      scrollChatBottom();
+    }
+  }
+  window.toggleChat = toggleChat;
+
+  function loadChatHistory() {
+    fetch(window.MD_URLS.chatHistory)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var box = document.getElementById('chatMessages');
+        var items = data.history || [];
+        if (items.length === 0) return;
+        // Clear default welcome message if loading history
+        box.innerHTML = '';
+        items.forEach(function(turn) {
+          if (turn.role === 'user' || turn.role === 'assistant') {
+            appendMsg(turn.role, turn.content);
+            _history.push({ role: turn.role, content: turn.content });
+          }
+        });
+        // Add welcome back if there is history
+        if (items.length > 0) {
+          var welcome = document.createElement('div');
+          welcome.className = 'chat-msg assistant';
+          welcome.style.opacity = '0.7';
+          welcome.style.fontSize = '12px';
+          welcome.textContent = '👋 Continuamos donde lo dejamos. ¿En qué te ayudo?';
+          box.appendChild(welcome);
+          scrollChatBottom();
+        }
+      })
+      .catch(function() {
+        // Silently fail; chat works without history
+      });
+  }
+  window.loadChatHistory = loadChatHistory;
+
+  function scrollChatBottom() {
+    var box = document.getElementById('chatMessages');
+    if (box) box.scrollTop = box.scrollHeight;
+  }
+
+  function appendMsg(role, text) {
+    var box = document.getElementById('chatMessages');
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    div.textContent = text;
+    box.appendChild(div);
+    scrollChatBottom();
+    return div;
+  }
+
+  function setTyping(on) {
+    var box      = document.getElementById('chatMessages');
+    var existing = document.getElementById('chatTyping');
+    if (on && !existing) {
+      var t = document.createElement('div');
+      t.id = 'chatTyping';
+      t.className = 'chat-typing';
+      t.innerHTML = '<span></span><span></span><span></span>';
+      box.appendChild(t);
+      scrollChatBottom();
+    } else if (!on && existing) {
+      existing.remove();
+    }
+  }
+
+  function sendChat() {
+    if (_busy) return;
+    var input = document.getElementById('chatInput');
+    var msg   = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    input.style.height = '';
+    appendMsg('user', msg);
+    _history.push({ role: 'user', content: msg });
+
+    _busy = true;
+    document.getElementById('chatSendBtn').disabled = true;
+    setTyping(true);
+
+    fetch(window.MD_URLS.chat, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: _history.slice(-20) })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      setTyping(false);
+      if (data.reply) {
+        appendMsg('assistant', data.reply);
+        _history.push({ role: 'assistant', content: data.reply });
+        if (data.model) {
+          var lbl = document.getElementById('chatModelLabel');
+          if (lbl) lbl.textContent = data.model.split('/').pop();
+        }
+      } else {
+        appendMsg('error', data.error || 'Error desconocido');
+      }
+    })
+    .catch(function(err) {
+      setTyping(false);
+      appendMsg('error', 'Error de red: ' + err.message);
+    })
+    .finally(function() {
+      _busy = false;
+      document.getElementById('chatSendBtn').disabled = false;
+    });
+  }
+  window.sendChat = sendChat;
+
+  // Send on Enter (Shift+Enter = newline)
+  document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+    var input = document.getElementById('chatInput');
+    if (input) {
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+      });
+      input.addEventListener('input', function() {
+        this.style.height = '';
+        this.style.height = Math.min(this.scrollHeight, 96) + 'px';
+      });
+    }
+
+    // ── Sidebar art: mini line overview ──────────────────
+    var art = document.getElementById('sidebarArt');
+    if (art) {
+      fetch(window.MD_URLS.lineasStatus)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var sc = { critical: '#f38ba8', warning: '#f9e2af', ok: '#a6e3a1' };
+          var entries = Object.entries(data || {});
+          if (!entries.length) {
+            art.innerHTML = '<div class="sidebar-line-card">'
+              + '<div class="sidebar-line-head"><span class="sidebar-line-name">MD Data</span>'
+              + '<span class="sidebar-line-badge" style="background:rgba(249,226,175,.18);color:#f9e2af">sin datos</span></div>'
+              + '<div class="sidebar-art-copy">Conecta balanceo, demanda, kanban y plan de accion para activar el resumen.</div>'
+              + '</div>';
+            return;
+          }
+          art.innerHTML = entries.map(function(entry) {
+            var linea = entry[0], info = entry[1];
+            var badge = info.cuellos > 0
+              ? info.cuellos + ' cuello' + (info.cuellos > 1 ? 's' : '')
+              : info.warnings > 0
+                ? info.warnings + ' alerta' + (info.warnings > 1 ? 's' : '')
+                : 'OK';
+            var dots = info.stations.map(function(s) {
+              return '<span class="sidebar-dot" style="background:' + sc[s.status] + '" title="' + s.name + ': ' + s.ct + 's"></span>';
+            }).join('');
+            return '<div class="sidebar-line-card">'
+              + '<div class="sidebar-line-head">'
+              + '<span class="sidebar-line-name">' + linea + '</span>'
+              + '<span class="sidebar-line-badge" style="background:' + sc[info.overall] + '22;color:' + sc[info.overall] + '">' + badge + '</span>'
+              + '</div>'
+              + '<div class="sidebar-line-dots">' + dots + '</div>'
+              + '</div>';
+          }).join('');
+        })
+        .catch(function() {
+          art.innerHTML = '<div class="sidebar-line-card">'
+            + '<div class="sidebar-line-head"><span class="sidebar-line-name">MD Data</span>'
+            + '<span class="sidebar-line-badge" style="background:rgba(243,139,168,.18);color:#f38ba8">offline</span></div>'
+            + '<div class="sidebar-art-copy">No se pudo cargar el panel. Revisa sesion o API de lineas.</div>'
+            + '</div>';
+        });
+    }
+  });
+})();
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(window.MD_URLS.serviceWorker).catch(() => {});
+    });
+  }
+
+  function applyTheme(theme) {
+    let resolvedTheme = theme;
+    if (theme === 'system') {
+      resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'mocha' : 'latte';
+    }
+    document.documentElement.setAttribute('data-theme', resolvedTheme);
+    updateChartTheme(resolvedTheme);
+  }
+
+  function changeTheme(theme) {
+    localStorage.setItem('theme', theme);
+    applyTheme(theme);
+    // Sync button active state
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+  }
+
+  function updateChartTheme(theme) {
+    if (typeof Chart === 'undefined') return;
+    const isLatte = theme === 'latte';
+    const gridColor = isLatte ? '#ccd0da' : '#313244'; /* surface0 */
+    const tickColor = isLatte ? '#6c6f85' : '#a6adc8'; /* subtext0 */
+    Chart.defaults.color = tickColor;
+    // Chart.js v4: instances is a plain object keyed by id
+    Object.values(Chart.instances).forEach(instance => {
+      try {
+        const scales = instance.config.options.scales;
+        if (scales) {
+          ['x','y'].forEach(axis => {
+            if (scales[axis]) {
+              scales[axis].grid = scales[axis].grid || {};
+              scales[axis].ticks = scales[axis].ticks || {};
+              scales[axis].grid.color = gridColor;
+              scales[axis].ticks.color = tickColor;
+            }
+          });
+        }
+        instance.update('none');
+      } catch(e) { /* ignore per-chart errors */ }
+    });
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if ((localStorage.getItem('theme') || 'system') === 'system') applyTheme('system');
+  });
+
+  // ── Notifications ──────────────────────────────────────────
+  let _notifLoaded = false;
+
+  function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const open = !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', open);
+    overlay.classList.toggle('open', open);
+    document.body.classList.toggle('sidebar-open', open);
+    if (open) {
+      const morePanel = document.getElementById('morePanel');
+      if (morePanel) morePanel.classList.remove('open');
+    }
+  }
+  window.toggleSidebar = toggleSidebar;
+
+  function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+  }
+  window.closeSidebar = closeSidebar;
+
+  function toggleMoreMenu() {
+    const panel = document.getElementById('morePanel');
+    const open = panel.classList.toggle('open');
+    if (open) closeSidebar();
+  }
+  window.toggleMoreMenu = toggleMoreMenu;
+
+  function toggleNotifications() {
+    const panel = document.getElementById('notifPanel');
+    const isOpen = panel.classList.toggle('open');
+    if (isOpen && !_notifLoaded) loadNotifications();
+  }
+
+  function loadNotifications() {
+    fetch(window.MD_URLS.notifications)
+      .then(r => r.json())
+      .then(items => {
+        _notifLoaded = true;
+        const body = document.getElementById('notifBody');
+        const badge = document.getElementById('notifBadge');
+        const crit = items.filter(i => i.urgency === 'critical').length;
+        const warn = items.filter(i => i.urgency === 'warning').length;
+        const total = crit + warn;
+        if (total > 0) {
+          badge.textContent = total > 9 ? '9+' : total;
+          badge.style.display = 'flex';
+        }
+        if (!items.length) {
+          body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Sin alertas activas ✓</div>';
+          return;
+        }
+        const urgencyColors = { critical: 'var(--accent-red)', warning: 'var(--accent-yellow)', ok: 'var(--accent-green)' };
+        const urgencyLabels = { critical: '≤3 días', warning: '≤7 días', ok: 'OK' };
+        body.innerHTML = items.map(i => `
+          <div class="notif-item">
+            <span class="notif-dot" style="background:${urgencyColors[i.urgency] || 'var(--accent-green)'}"></span>
+            <div class="notif-info">
+              <div class="notif-part">${i.part || '—'}</div>
+              <div class="notif-meta">${i.location || ''} · ${urgencyLabels[i.urgency] || ''}</div>
+            </div>
+            <span class="notif-days" style="color:${urgencyColors[i.urgency]}">${i.days_left}d</span>
+          </div>`).join('');
+      })
+      .catch(() => {
+        document.getElementById('notifBody').innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px">Error al cargar</div>';
+      });
+  }
+
+  // Close panels when clicking outside
+  document.addEventListener('click', e => {
+    const notifBtn = document.getElementById('notifBtn');
+    const notifPanel = document.getElementById('notifPanel');
+    if (notifPanel && notifBtn && !notifBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+      notifPanel.classList.remove('open');
+    }
+    const moreBtn = document.getElementById('moreBtn');
+    const morePanel = document.getElementById('morePanel');
+    if (morePanel && moreBtn && !moreBtn.contains(e.target) && !morePanel.contains(e.target)) {
+      morePanel.classList.remove('open');
+    }
+  });
+
+  document.querySelectorAll('.sidebar .nav-item').forEach(link => {
+    link.addEventListener('click', closeSidebar);
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('theme') || 'system';
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === saved);
+    });
+    applyTheme(saved);
+    setTimeout(() => {
+      const t = document.documentElement.getAttribute('data-theme');
+      if (t) updateChartTheme(t);
+    }, 150);
+    // Pre-load notification count
+    fetch(window.MD_URLS.notifications)
+      .then(r => r.json())
+      .then(items => {
+        _notifLoaded = true;
+        const crit = items.filter(i => i.urgency === 'critical').length;
+        const warn = items.filter(i => i.urgency === 'warning').length;
+        const total = crit + warn;
+        const badge = document.getElementById('notifBadge');
+        const body = document.getElementById('notifBody');
+        if (total > 0 && badge) {
+          badge.textContent = total > 9 ? '9+' : total;
+          badge.style.display = 'flex';
+        }
+        if (body && items.length) {
+          const urgencyColors = { critical: 'var(--accent-red)', warning: 'var(--accent-yellow)', ok: 'var(--accent-green)' };
+          const urgencyLabels = { critical: '≤3 días', warning: '≤7 días', ok: 'OK' };
+          body.innerHTML = items.map(i => `
+            <div class="notif-item">
+              <span class="notif-dot" style="background:${urgencyColors[i.urgency] || 'var(--accent-green)'}"></span>
+              <div class="notif-info">
+                <div class="notif-part">${i.part || '—'}</div>
+                <div class="notif-meta">${i.location || ''} · ${urgencyLabels[i.urgency] || ''}</div>
+              </div>
+              <span class="notif-days" style="color:${urgencyColors[i.urgency]}">${i.days_left}d</span>
+            </div>`).join('');
+        } else if (body) {
+          body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Sin alertas activas ✓</div>';
+        }
+      })
+      .catch(() => {});
+  });
+</script>
+</body>
+</html>

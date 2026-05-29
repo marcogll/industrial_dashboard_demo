@@ -1,0 +1,20 @@
+station_id,station_name,time_seconds,operators,line
+1,Alimentación,430,2,Corte LASER
+2,Corte,506,1,Corte LASER
+3,Inspección,584,1,Corte LASER
+4,P1,451,1,Doblado Fine
+5,P2,481,1,Doblado Fine
+6,P3,498,1,Doblado Fine
+7,P4,595,1,Doblado Fine
+8,P5,571,1,Doblado Heavy
+9,P6,641,1,Doblado Heavy
+10,P7,717,1,Doblado Heavy
+11,P8,788,1,Doblado Heavy
+12,Preparación,535,2,Soldadura
+13,Soldadura MIG,582,1,Soldadura
+14,Soldadura TIG,628,1,Soldadura
+15,Acabado,666,1,Soldadura
+16,Pretratamiento,372,2,Pintura
+17,Pintura polvo,450,1,Pintura
+18,Curado,524,1,Pintura
+19,Inspección,539,1,Pintura

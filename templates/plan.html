@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Plan de acción — {{ title }}{% endblock %}
+{% block page_title %}Plan de Accion{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Plan de Accion</h1>
+    <p class="subtitle">{{ acciones|length|num(0) }} acciones de mejora para líneas de producción</p>
+  </div>
+
+  <div class="kpi-row" style="margin-bottom:20px">
+    <div class="kpi">
+      <div class="label">Prioridad alta</div>
+      <div class="value" style="color:var(--accent-red)">{{ alta|length|num(0) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Prioridad media</div>
+      <div class="value" style="color:var(--accent-yellow)">{{ media|length|num(0) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Prioridad baja</div>
+      <div class="value" style="color:var(--accent-green)">{{ baja|length|num(0) }}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Líneas</div>
+      <div class="value">{{ lineas|length|num(0) }}</div>
+      <div class="note">{{ lineas|join(', ') }}</div>
+    </div>
+  </div>
+
+  <div class="filters" style="margin-bottom:20px;">
+    <label>Prioridad</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="active" onclick="filterPriority('all', this)">Todas</button>
+      <button onclick="filterPriority('ALTA', this)" style="--btn-accent:var(--accent-red)">ALTA</button>
+      <button onclick="filterPriority('MEDIA', this)" style="--btn-accent:var(--accent-yellow)">MEDIA</button>
+      <button onclick="filterPriority('BAJA', this)" style="--btn-accent:var(--accent-green)">BAJA</button>
+    </div>
+    <label style="margin-left:16px;">Línea</label>
+    <select onchange="filterLine(this.value)">
+      <option value="all">Todas las líneas</option>
+      {% for l in lineas %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="num">#</th><th>Accion</th><th>Linea</th><th>Area</th><th>Prioridad</th><th>Inicio</th><th>Fin</th><th>Responsable</th><th>KPI</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in acciones %}
+            <tr data-priority="{{ a.prioridad }}" data-line="{{ a.linea }}">
+              <td class="num">{{ a.num }}</td>
+              <td>{{ a.accion }}</td>
+              <td>{{ a.linea }}</td>
+              <td>{{ a.area }}</td>
+              <td><span class="badge badge-{{ a.prioridad|lower }}">{{ a.prioridad }}</span></td>
+              <td>{{ a.inicio }}</td>
+              <td>{{ a.fin }}</td>
+              <td>{{ a.responsable }}</td>
+              <td style="font-size:12px">{{ a.kpi }}</td>
+              <td>
+                <button class="status-btn {{ a.status }}" onclick="toggleStatus({{ a.num }}, this)" data-num="{{ a.num }}">{{ a.status }}</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+let _filterPriority = 'all', _filterLine = 'all';
+
+function applyFilters() {
+  document.querySelectorAll('tbody tr').forEach(tr => {
+    const okP = _filterPriority === 'all' || tr.dataset.priority === _filterPriority;
+    const okL = _filterLine === 'all' || tr.dataset.line === _filterLine;
+    tr.style.display = (okP && okL) ? '' : 'none';
+  });
+}
+
+function filterPriority(val, btn) {
+  _filterPriority = val;
+  document.querySelectorAll('.filters button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function filterLine(val) {
+  _filterLine = val;
+  applyFilters();
+}
+function toggleStatus(num, btn) {
+  const originalText = btn.textContent.trim();
+  const next = originalText === 'pendiente' ? 'completado' : 'pendiente';
+  btn.disabled = true;
+  btn.textContent = '...';
+  fetch('/plan/' + num + '/status', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status: next})
+  }).then(r => r.json()).then(data => {
+    if (data.ok) {
+      btn.textContent = next;
+      btn.className = 'status-btn ' + next;
+    } else {
+      btn.textContent = originalText;
+      alert('Error al actualizar: ' + (data.error || 'desconocido'));
+    }
+    btn.disabled = false;
+  }).catch(err => {
+    btn.textContent = originalText;
+    btn.disabled = false;
+    alert('Error de red: ' + err.message);
+  });
+}
+</script>
+{% endblock %}

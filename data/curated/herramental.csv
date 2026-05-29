@@ -1,0 +1,20 @@
+linea,estacion,herramienta,especificacion,uso,cantidad,tipo,status
+Corte LASER,Corte,"Lente focal 7.5""",Óptica CO2,5000 hrs,2,Consumible,active
+Corte LASER,Corte,Boquilla 1.4mm,Cobre,200 hrs,10,Consumible,active
+Corte LASER,Corte,Espejo plano,Silicio,3000 hrs,4,Consumible,active
+Doblado Fine,P1,Punzón recto 20mm,Acero D2,50000 ciclos,2,Herramienta,active
+Doblado Fine,P2,Matriz V 12mm,Acero D2,50000 ciclos,2,Herramienta,active
+Doblado Fine,P3,Punzón gozne 88°,Acero D2,40000 ciclos,1,Herramienta,active
+Doblado Fine,P4,Matriz V 20mm,Acero D2,50000 ciclos,2,Herramienta,active
+Doblado Heavy,P5,Punzón recto 30mm,Acero D2,40000 ciclos,2,Herramienta,active
+Doblado Heavy,P6,Matriz V 25mm,Acero D2,40000 ciclos,2,Herramienta,active
+Doblado Heavy,P7,Punzón gozne 88° heavy,Acero D2,30000 ciclos,1,Herramienta,active
+Doblado Heavy,P8,Matriz V 16mm,Acero D2,50000 ciclos,2,Herramienta,active
+Soldadura,Soldadura MIG,Antorcha MIG 400A,Binzel,2000 hrs,4,Consumible,active
+Soldadura,Soldadura TIG,Antorcha TIG 250A,Weldcraft,3000 hrs,3,Consumible,active
+Soldadura,Preparación,"Esmeril angular 4.5""",Makita 9557B,500 hrs,4,Equipo,active
+Pintura,Pintura polvo,Pistola corona,Nordson,2000 hrs,3,Equipo,active
+Pintura,Pretratamiento,Bomba dosificadora,Graco,3000 hrs,2,Equipo,active
+Pintura,Curado,Termopar tipo K,Omega,1000 hrs,6,Instrumento,active
+Pintura,Inspección,Medidor espesor,PosiTector 6000,2000 hrs,2,Instrumento,active
+Pintura,Inspección,Galga P256,BYK,5000 ciclos,3,Herramienta,active

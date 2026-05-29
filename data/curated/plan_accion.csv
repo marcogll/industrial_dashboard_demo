@@ -1,0 +1,21 @@
+num,accion,linea,area,prioridad,inicio,fin,responsable,recursos,kpi,status
+1,Reducir tiempo de setup en prensas P1-P4,Doblado Fine,Setup,Alta,2026-06-01,2026-07-15,Ing. José López,"Cronómetro, checklist SMED",Setup < 30 min,pendiente
+2,Implementar mantenimiento autónomo en Corte LASER,Corte LASER,Mantenimiento,Alta,2026-06-01,2026-06-30,Ing. Mario Gómez,"Formato TPM, lubricantes",MTBF > 120 hrs,pendiente
+3,Estandarizar parámetros de soldadura MIG,Soldadura,Calidad,Alta,2026-05-15,2026-06-15,Ing. Ana Martínez,"WPS, medidores espesor",FPY > 95%,pendiente
+4,Reducir caminatas en Pintura (reacomodo),Pintura,Lean,Media,2026-06-15,2026-07-30,Ing. Luis Fernández,"Layout propuesto, cintas",Distancia < 50 m,pendiente
+5,Capacitar operadores en Doblado Heavy,Doblado Heavy,Capacitación,Media,2026-06-01,2026-06-20,RH / Karla Ruiz,"Manuales, videos, evaluación",90% operadores certificados,pendiente
+6,Implementar kanban entre Corte y Doblado,Corte LASER,Flujo,Alta,2026-07-01,2026-08-15,Ing. Pedro Sánchez,"Tarjetas kanban, racks",WIP < 200 pzs,pendiente
+7,Reducir scrap en Pintura (pretratamiento),Pintura,Calidad,Alta,2026-05-20,2026-06-30,Ing. Carmen Torres,"Control baños, análisis laboratorio",Scrap < 3%,pendiente
+8,Ajustar takt de Doblado Fine a 2200 seg,Doblado Fine,Mejora,Media,2026-07-01,2026-08-01,Ing. José López,"Estudio de tiempos, cronómetro",CT < 2200 seg,pendiente
+9,Automatizar inspección en Corte LASER,Corte LASER,Tecnología,Media,2026-08-01,2026-10-01,Ing. Mario Gómez,"Cámara visión, software",Inspección 100%,pendiente
+10,Reducir cambios de formato en Heavy,Doblado Heavy,Setup,Alta,2026-06-15,2026-07-31,Ing. Ricardo Mendoza,"Prensas rápidas, matrices modulares",Setup < 45 min,pendiente
+11,Implementar 5S en área de Soldadura,Soldadura,Lean,Media,2026-06-01,2026-06-30,Supervisor Turno A,"Formatos 5S, etiquetas, estantes",Auditoría > 80%,pendiente
+12,Balancear estaciones de Pintura,Pintura,Balanceo,Media,2026-07-01,2026-07-31,Ing. Luis Fernández,"Estudio de tiempos, redistribución",Pct utilización < 90%,pendiente
+13,Reducir retrabajo en soldadura TIG,Soldadura,Calidad,Alta,2026-05-20,2026-06-20,Ing. Ana Martínez,"Plantilla alineación, parametría",Rework < 2%,pendiente
+14,Programar mantenimiento preventivo P5-P8,Doblado Heavy,Mantenimiento,Media,2026-06-01,2026-06-30,Mantenimiento General,"Plan MTTO, refacciones",Disponibilidad > 90%,pendiente
+15,Optimizar consumo de polvo en Pintura,Pintura,Costo,Baja,2026-07-15,2026-08-30,Ing. Carmen Torres,"Medidor flujo, boquillas",Costo < $12/hr,pendiente
+16,Implementar doble turno en Corte LASER,Corte LASER,Producción,Media,2026-08-01,2026-09-01,Gerencia Planta,"Contratación, horarios",Output > 96 pzs/día,pendiente
+17,Reducir mermas en manipulación de lámina,Doblado Heavy,Calidad,Baja,2026-06-15,2026-07-15,Supervisor Turno B,"Capacitación manipulación, EPP",Merma < 1%,pendiente
+18,Estandarizar checklist de arranque,Soldadura,Proceso,Media,2026-06-01,2026-06-15,Ing. Ana Martínez,"Checklist laminado, formato digital",100% cumplimiento,pendiente
+19,Implementar Andon en Doblado Fine,Doblado Fine,Tecnología,Baja,2026-09-01,2026-10-15,Ing. José López,"Tablero andon, luces, buzzer",Tiempo respuesta < 3 min,pendiente
+20,Reducir tiempo de curado en Pintura,Pintura,Mejora,Media,2026-07-01,2026-07-31,Ing. Luis Fernández,"Horno, perfil temperatura",Curado < 20 min,pendiente

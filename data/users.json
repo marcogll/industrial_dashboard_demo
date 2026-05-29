@@ -1,0 +1,17 @@
+{
+  "mafer": {
+    "password": "scrypt:32768:8:1$CAe7EKxE46ys8rO0$8e05779e5bebc0e02df63e7e92fb721c8ff888675dedfe4d6961c8540bfe4c767f7a4b967cee15da01102acd828e7c54c223f66ed221494a2bc46d646237520b",
+    "display_name": "Ma. Fernanda Rocha",
+    "role": "admin"
+  },
+  "viewer": {
+    "password": "scrypt:32768:8:1$Vz2JTjQYcRSEkhns$147a2f97f8d20314bb456eca45ca0b47df455cb4474af0c4fd2d375cc4df311dbea0c851b7eae6c55a1534869adc59a13507833776f5cf866c751e8c320e1a0c",
+    "display_name": "Operador",
+    "role": "viewer"
+  },
+  "admin": {
+    "password": "scrypt:32768:8:1$ImnxyUQmXD73er1n$7ed406a03385240fac0be89bd213dee82cdbc83ffdb20e6860234e503bdc4a8c210c55ef1fd12f45ec3e3078819117c6343bf3f79ed0cf477b15fc8bcd796c92",
+    "display_name": "Admin",
+    "role": "god"
+  }
+}

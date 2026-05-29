@@ -1,0 +1,6 @@
+activity_type,duration_minutes,created_at
+Producción,480,2026-05-22T08:00:00Z
+Mantenimiento,120,2026-05-22T09:00:00Z
+Calidad,60,2026-05-23T10:00:00Z
+Setup,90,2026-05-24T07:30:00Z
+Capacitación,240,2026-05-25T11:00:00Z

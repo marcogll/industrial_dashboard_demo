@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ title }}</h1>
+  <p class="subtitle">Inventario completo de fixtures y su estado operativo.</p>
+</div>
+
+<!-- Resumen -->
+<div class="kpi-row" style="margin-bottom:22px">
+  <div class="kpi">
+    <div class="label">Operativos</div>
+    <div class="value" style="color:var(--accent-green)">{{ stats.by_status.get('active', 0)|num(0) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">En mantenimiento</div>
+    <div class="value" style="color:var(--accent-yellow)">{{ stats.in_maintenance|num(0) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Dañados</div>
+    <div class="value" style="color:var(--accent-red)">{{ stats.damaged|num(0) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Retirados</div>
+    <div class="value" style="color:var(--text-muted)">{{ stats.by_status.get('retired', 0)|num(0) }}</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Total</div>
+    <div class="value" style="color:var(--accent-blue)">{{ stats.total|num(0) }}</div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<form method="get" action="{{ url_for('massive.massive_fixtures') }}" class="filters">
+  <select name="line">
+    <option value="">Todas las líneas</option>
+    {% for line in lines %}
+    <option value="{{ line }}" {% if line_filter == line %}selected{% endif %}>Línea {{ line }}</option>
+    {% endfor %}
+  </select>
+  <select name="status">
+    <option value="">Todos los estados</option>
+    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Operativo</option>
+    <option value="maintenance" {% if status_filter == 'maintenance' %}selected{% endif %}>Mantenimiento</option>
+    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Dañado</option>
+    <option value="retired" {% if status_filter == 'retired' %}selected{% endif %}>Retirado</option>
+  </select>
+  <button type="submit" class="btn btn-ghost">🔍 Filtrar</button>
+  <button type="button" onclick="alert('Funcionalidad en desarrollo')" class="btn btn-primary" style="margin-left:auto">Registrar Mantenimiento</button>
+</form>
+
+<!-- Tabla -->
+<div class="table-wrap">
+  {% if fixtures %}
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Línea</th>
+        <th>Estación</th>
+        <th>Estado</th>
+        <th>Ubicación</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fixtures %}
+      <tr>
+        <td><strong>{{ f.code }}</strong></td>
+        <td>{{ f.name }}</td>
+        <td>{{ f.line or '—' }}</td>
+        <td>{{ f.station or '—' }}</td>
+        <td>
+          {% if f.status == 'active' %}
+          <span class="badge badge-ok">Operativo</span>
+          {% elif f.status == 'inactive' %}
+          <span class="badge badge-crit">Dañado</span>
+          {% elif f.status == 'maintenance' %}
+          <span class="badge badge-warn">Mantenimiento</span>
+          {% elif f.status == 'retired' %}
+          <span class="badge badge-pendiente">Retirado</span>
+          {% else %}
+          <span class="badge badge-pendiente">{{ f.status or 'Desconocido' }}</span>
+          {% endif %}
+        </td>
+        <td>{{ f.location or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div style="padding: 28px; text-align: center; color: var(--text-muted);">
+    No se encontraron fixtures con los filtros seleccionados.
+  </div>
+  {% endif %}
+</div>
+
+<!-- Resumen por línea -->
+{% if stats.by_line %}
+<div class="card" style="margin-top: 22px;">
+  <div class="card-head">
+    <h3>Fixtures por Línea</h3>
+  </div>
+  <div class="card-body">
+    <div class="bars">
+      {% for line, count in stats.by_line.items() %}
+      <div class="bar">
+        <div class="bar-label">Línea {{ line }}</div>
+        <div class="bar-track"><div class="bar-fill ok" style="width:{{ (count / stats.total * 100) | round }}%;">{{ count|num(0) }}</div></div>
+        <div class="bar-val">{{ count|num(0) }} / {{ stats.total|num(0) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

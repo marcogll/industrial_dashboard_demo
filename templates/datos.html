@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Datos — {{ title }}{% endblock %}
+{% block page_title %}Gestión de Datos{% endblock %}
+
+{% block extra_css %}
+<style>
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.data-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+}
+.data-card:hover { border-color: var(--accent-purple); box-shadow: 0 0 0 1px var(--accent-purple)22; }
+.data-card-head {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+}
+.data-card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.data-card-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.data-card-status {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.data-card-status.ok   { background: var(--badge-ok-bg);   color: var(--badge-ok-color); }
+.data-card-status.miss { background: var(--badge-crit-bg); color: var(--badge-crit-color); }
+.data-card-meta {
+  padding: 10px 16px;
+  display: flex; gap: 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-light);
+}
+.data-meta-item { display: flex; flex-direction: column; gap: 1px; }
+.data-meta-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 700; }
+.data-meta-value { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.data-card-cols {
+  padding: 8px 16px;
+  display: flex; flex-wrap: wrap; gap: 4px;
+  border-bottom: 1px solid var(--border-light);
+}
+.col-pill {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: var(--surface); color: var(--text-muted); font-family: monospace;
+  border: 1px solid var(--border-light);
+}
+.data-card-actions {
+  padding: 12px 16px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.data-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-xl); border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-secondary);
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: var(--transition); text-decoration: none;
+}
+.data-btn:hover { background: var(--surface-elevated); border-color: var(--accent-purple); color: var(--accent-purple); }
+.data-btn.primary { background: var(--gradient-hero); color: #fff; border-color: transparent; }
+.data-btn.primary:hover { opacity: 0.88; }
+.data-btn.danger { border-color: var(--accent-red); color: var(--accent-red); }
+.data-btn.danger:hover { background: var(--badge-crit-bg); }
+.upload-input { display: none; }
+.upload-status {
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  display: none; margin-top: 6px;
+}
+.upload-status.ok   { background: var(--badge-ok-bg);   color: var(--badge-ok-color); display:block; }
+.upload-status.err  { background: var(--badge-crit-bg); color: var(--badge-crit-color); display:block; }
+.upload-status.busy { background: var(--surface); color: var(--text-muted); display:block; }
+.export-bar {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap;
+}
+.export-bar-info h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.export-bar-info p  { font-size: 12px; color: var(--text-muted); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Gestión de Datos</h1>
+  <p class="subtitle">Importa, exporta y descarga templates para cada dataset del dashboard</p>
+</div>
+
+<!-- Export bar -->
+<div class="export-bar" style="margin-bottom:24px">
+  <div class="export-bar-info">
+    <h3>Exportar todo</h3>
+    <p>Descarga todos los datos actuales del dashboard en un solo archivo Excel con múltiples hojas</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a href="/api/export/xlsx" class="data-btn primary" download>⬇ Exportar Excel completo</a>
+    <a href="/api/export/all"  class="data-btn" download>⬇ Exportar JSON</a>
+  </div>
+</div>
+
+<!-- Dataset cards -->
+<div class="data-grid">
+  {% for ds in datasets %}
+  <div class="data-card" id="card-{{ ds.name }}">
+    <div class="data-card-head">
+      <div>
+        <div class="data-card-title">{{ ds.label }}</div>
+        <div class="data-card-desc">{{ ds.description }}</div>
+      </div>
+      <span class="data-card-status {{ 'ok' if ds.exists else 'miss' }}">
+        {{ '✓ ' + (ds.rows|string) + ' filas' if ds.exists else '✗ Sin datos' }}
+      </span>
+    </div>
+
+    <div class="data-card-meta">
+      <div class="data-meta-item">
+        <span class="data-meta-label">Archivo</span>
+        <span class="data-meta-value" style="font-family:monospace;font-size:11px">{{ ds.file }}</span>
+      </div>
+      {% if ds.mtime %}
+      <div class="data-meta-item">
+        <span class="data-meta-label">Actualizado</span>
+        <span class="data-meta-value">{{ ds.mtime }}</span>
+      </div>
+      {% endif %}
+      <div class="data-meta-item">
+        <span class="data-meta-label">Columnas</span>
+        <span class="data-meta-value">{{ ds.columns|length }}</span>
+      </div>
+    </div>
+
+    <div class="data-card-cols">
+      {% for col in ds.columns %}
+      <span class="col-pill">{{ col }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="data-card-actions">
+      <a href="/api/template/{{ ds.name }}" class="data-btn" title="Template Excel vacío con columnas correctas" download>
+        ⬇ Template
+      </a>
+      <button class="data-btn primary" onclick="triggerUpload('{{ ds.name }}')">
+        ⬆ Importar
+      </button>
+      <input type="file" class="upload-input" id="file-{{ ds.name }}"
+             accept=".csv,.xlsx,.xls"
+             onchange="uploadDataset('{{ ds.name }}', this)">
+    </div>
+    <div class="upload-status" id="status-{{ ds.name }}"></div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function triggerUpload(name) {
+  document.getElementById('file-' + name).click();
+}
+
+function uploadDataset(name, input) {
+  if (!input.files.length) return;
+  const file   = input.files[0];
+  const status = document.getElementById('status-' + name);
+  status.className = 'upload-status busy';
+  status.textContent = 'Subiendo ' + file.name + '...';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  fetch('/datos/upload/' + name, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        status.className = 'upload-status ok';
+        status.textContent = '✓ Importado: ' + data.rows + ' filas. Recarga la página para ver el estado actualizado.';
+        // Update row count badge
+        const badge = document.querySelector('#card-' + name + ' .data-card-status');
+        if (badge) { badge.className = 'data-card-status ok'; badge.textContent = '✓ ' + data.rows + ' filas'; }
+      } else {
+        status.className = 'upload-status err';
+        status.textContent = '✗ ' + (data.error || 'Error desconocido');
+      }
+    })
+    .catch(err => {
+      status.className = 'upload-status err';
+      status.textContent = '✗ Error de red: ' + err.message;
+    })
+    .finally(() => { input.value = ''; });
+}
+</script>
+{% endblock %}

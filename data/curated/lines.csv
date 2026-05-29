@@ -1,0 +1,6 @@
+id,code,name,takt_seconds,target_pieces_per_shift,status,stations,oee
+1,CL,Corte LASER,2821,115,active,3,85.2
+2,DF,Doblado Fine,1927,168,active,4,88.7
+3,DH,Doblado Heavy,2217,146,active,4,75.3
+4,SL,Soldadura,2472,131,active,4,80.1
+5,PT,Pintura,2020,128,active,4,70.8

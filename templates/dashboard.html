@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <h1>Rack Assembly Dashboard</h1>
+    <p class="subtitle">KPIs operativos — fuente: {{ data_file.name }}</p>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi hero">
+      <div class="label">Capacidad actual</div>
+      <div class="value">{{ metrics.actual_units|num(1) }}<span style="font-size:15px;font-weight:500;opacity:.8"> pzs/turno</span></div>
+      <div class="note">{{ metrics.takt_utilization|num(1) }}% del objetivo takt</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Meta por takt</div>
+      <div class="value" style="color:var(--accent-green)">{{ metrics.target_units|num(1) }}<span style="font-size:15px;font-weight:500;color:var(--text-muted)"> pzs/turno</span></div>
+      <div class="note">{{ available_seconds|num(0) }}s / {{ takt_seconds|num(1) }}s takt</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Gap vs meta</div>
+      <div class="value" style="color:{{ 'var(--accent-red)' if metrics.gap_units > 0 else 'var(--accent-green)' }}">{{ metrics.gap_units|num(1) }}<span style="font-size:15px;font-weight:500;color:var(--text-muted)"> pzs</span></div>
+      <div class="note">
+        <span class="trend {{ 'down' if metrics.gap_units > 0 else 'up' }}">{{ 'Faltante' if metrics.gap_units > 0 else 'Dentro de meta' }}</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="label">Trabajo total</div>
+      <div class="value" style="color:var(--accent-blue)">{{ (metrics.total_work_seconds / 60)|num(1) }}<span style="font-size:15px;font-weight:500;color:var(--text-muted)"> min</span></div>
+      <div class="note">Suma de estaciones</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Estaciones</div>
+      <div class="value" style="color:var(--accent-purple)">{{ metrics.stations|length }}<span style="font-size:15px;font-weight:500;color:var(--text-muted)"> activas</span></div>
+      {% set cuellos = metrics.stations | selectattr('status', 'in', ['critical', 'warning']) | list %}
+      <div class="note">{{ cuellos|length }} sobre takt</div>
+    </div>
+  </div>
+
+  <div class="card-grid" style="margin-bottom:28px">
+    <a href="{{ url_for('produccion') }}" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">precision_manufacturing</span></div>
+      <h3>Produccion</h3>
+      <p>Balanceo de lineas Corte LASER, Doblado Fine. CT actual vs meta, desperdicios y demanda.</p>
+    </a>
+    <a href="{{ url_for('plan') }}" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">edit_note</span></div>
+      <h3>Plan de Accion</h3>
+      <p>20 acciones de mejora con prioridad, responsables, fechas y KPIs por linea.</p>
+    </a>
+    <a href="{{ url_for('partes') }}" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">build</span></div>
+      <h3>Partes / BOM</h3>
+      <p>Busqueda de componentes, listas de materiales y descripciones tecnicas.</p>
+    </a>
+    <a href="{{ url_for('kanban') }}" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">sync_alt</span></div>
+      <h3>Kanban</h3>
+      <p>Notificaciones de reabastecimiento por parte. Urgencia por dias restantes.</p>
+    </a>
+    <a href="{{ url_for('reporte') }}" target="_blank" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">description</span></div>
+      <h3>Reporte Ejecutivo</h3>
+      <p>Justificacion de inversion $15K USD para mejora del sistema de produccion.</p>
+    </a>
+    <a href="{{ url_for('download_csv') }}" class="card">
+      <div class="icon"><span class="material-symbols-outlined" style="font-size:22px">assessment</span></div>
+      <h3>Descargar CSV</h3>
+      <p>Exportar datos de estaciones en formato CSV para analisis externo.</p>
+    </a>
+  </div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-head"><h3>Capacidad por estacion</h3></div>
+    <div class="card-body">
+      <div class="bars">
+        {% for s in metrics.stations %}
+        <div class="bar">
+          <div class="bar-label">{{ s.raw.station_name }}</div>
+          <div class="bar-track">
+            <div class="bar-fill {{ 'crit' if s.status == 'critical' else ('warn' if s.status == 'warning' else 'ok') }}" style="width:{{ s.bar_width }}%">{{ s.raw.capacity_per_hour|num(1) }} pzs/h</div>
+          </div>
+          <div class="bar-val" style="color:{{ 'var(--accent-red)' if s.takt_gap > 0 else 'var(--accent-green)' }}">{{ '+' if s.takt_gap > 0 }}{{ s.takt_gap|num(0) }}s</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3>Detalle de estaciones</h3></div>
+    <div class="card-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estacion</th>
+              <th class="num">Tiempo (s)</th>
+              <th class="num">Ops</th>
+              <th class="num">Pzs/h</th>
+              <th class="num">Ciclo efectivo</th>
+              <th class="num">% Trabajo</th>
+              <th class="num">Takt %</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in metrics.stations %}
+            <tr>
+              <td>{{ s.raw.station_name }}</td>
+              <td class="num">{{ s.raw.time_seconds|num(0) }}</td>
+              <td class="num">{{ s.raw.operators|num(0) }}</td>
+              <td class="num"><strong>{{ s.raw.capacity_per_hour|num(2) }}</strong></td>
+              <td class="num">{{ s.raw.effective_cycle_seconds|num(0) }}s</td>
+              <td class="num">{{ s.work_share|num(1) }}%</td>
+              <td class="num">{{ s.takt_pct|num(0) }}%</td>
+              <td><span class="badge {{ 'badge-crit' if s.status == 'critical' else ('badge-warn' if s.status == 'warning' else 'badge-ok') }}">{{ s.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; font-size: 13px; background: var(--surface); outline: none; transition: var(--transition); }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-orange); box-shadow: 0 0 0 3px var(--badge-warn-bg); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .form-actions .btn-primary { padding: 10px 20px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: var(--transition); }
+  .form-actions .btn-primary:hover { background: var(--ctp-overlay2); }
+  .hours-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .hours-item { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 18px; text-align: center; box-shadow: var(--shadow-soft); }
+  .hours-item .h-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .hours-item .h-value { font-size: 24px; font-weight: 800; color: var(--accent-blue); letter-spacing: -0.02em; }
+  @media(max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>{{ title }}</h1>
+  <p class="subtitle">Registra y consulta actividades de mantenimiento, reparacion y mejora.</p>
+</div>
+
+<!-- Formulario -->
+<div class="card" style="margin-bottom: 22px;">
+  <div class="card-head">
+    <h3>➕ Nueva Actividad</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('massive.create_activity') }}">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="activity_type">Tipo de actividad</label>
+          <select id="activity_type" name="activity_type">
+            <option value="maintenance_preventive">Mantenimiento Preventivo</option>
+            <option value="maintenance_corrective">Mantenimiento Correctivo</option>
+            <option value="repair">Reparación</option>
+            <option value="calibration">Calibración</option>
+            <option value="improvement">Mejora / Modificación</option>
+            <option value="inspection">Inspección</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fixture_id">Fixture relacionado</label>
+          <select id="fixture_id" name="fixture_id">
+            <option value="">— Ninguno —</option>
+            {% for f in fixtures %}
+            <option value="{{ f.id }}">{{ f.code }} — {{ f.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="description">Descripción</label>
+          <textarea id="description" name="description" placeholder="Describe la actividad realizada..."></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="duration_minutes">Duración (minutos)</label>
+          <input type="number" id="duration_minutes" name="duration_minutes" min="1" placeholder="ej. 90">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Guardar Actividad</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Resumen de horas -->
+<div class="card" style="margin-bottom: 22px;">
+  <div class="card-head">
+    <h3><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">timer</span> Resumen de Horas — Semana actual</h3>
+  </div>
+  <div class="card-body">
+    {% if hours_by_type %}
+    <div class="hours-grid">
+      {% for h in hours_by_type %}
+      <div class="hours-item">
+        <div class="h-label">{{ h.activity_type.replace('_', ' ').title() }}</div>
+        <div class="h-value">{{ "%.1f"|format(h.total_min / 60) }} h</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+      No hay actividades registradas esta semana.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tabla de actividades -->
+<div class="card">
+  <div class="card-head">
+    <h3><span class="material-symbols-outlined" style="font-size:18px;vertical-align:middle">checklist</span> Actividades del Día</h3>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+      {% if today_activities %}
+      <table>
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Tipo</th>
+            <th>Descripción</th>
+            <th>Técnico</th>
+            <th>Duración</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in today_activities %}
+          <tr>
+            <td>{{ a.created_at.strftime('%H:%M') if a.created_at else '—' }}</td>
+            <td><span class="badge badge-ok">{{ a.activity_type.replace('_', ' ').title() }}</span></td>
+            <td>{{ a.description }}</td>
+            <td>{{ a.user_name or '—' }}</td>
+            <td class="num">{{ a.duration_minutes or 0 }} min</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding: 28px; text-align: center; color: var(--text-muted);">
+        No hay actividades registradas hoy.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
