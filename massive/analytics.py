@@ -98,7 +98,7 @@ def massive_analytics():
     )[:5]
 
     return render_template(
-        "kadrix/analytics.html",
+        "massive/analytics.html",
         title="Massive Dynamic — Analitica & Justificacion ROI",
         nav_active="massive",
         lines=lines,

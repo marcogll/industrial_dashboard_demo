@@ -245,7 +245,7 @@ def massive_hq():
     project_active = project_stats.get("active", 0)
 
     return render_template(
-        "kadrix/hq.html",
+        "massive/hq.html",
         title="Massive Dynamic — Centro de Control",
         nav_active="massive",
         board=board_data.get("board"),
@@ -281,7 +281,7 @@ def massive_board(board_id: int):
         return "Board not found", 404
     users = read_csv("users.csv") or [{"id": 1, "name": "Usuario"}]
     return render_template(
-        "kadrix/board.html",
+        "massive/board.html",
         title=f"Massive Dynamic — {data['board']['name']}",
         nav_active="massive",
         board=data["board"],
@@ -323,7 +323,7 @@ def massive_fixtures():
     lines = sorted(set(f.get("line", "") for f in fixtures if f.get("line")))
     stats = _fixtures_stats()
     return render_template(
-        "kadrix/fixtures.html",
+        "massive/fixtures.html",
         title="Massive Dynamic — Catalogo de Fixtures",
         nav_active="massive",
         fixtures=fixtures,
@@ -360,7 +360,7 @@ def massive_projects():
     for p in projects:
         p["progress"] = 0
     return render_template(
-        "kadrix/projects.html",
+        "massive/projects.html",
         title="Massive Dynamic — Proyectos de Mejora",
         nav_active="massive",
         projects=projects,
@@ -387,7 +387,7 @@ def massive_activity():
     hours_by_type: list[dict] = []
     fixtures = read_csv("herramental.csv")
     return render_template(
-        "kadrix/activity.html",
+        "massive/activity.html",
         title="Massive Dynamic — Registro de Actividades",
         nav_active="massive",
         activities=activities,

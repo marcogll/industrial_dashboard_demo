@@ -41,11 +41,11 @@ Aplicación Flask monolítica para dashboard industrial con datos sintéticos. N
 | Ruta | Template | Propósito |
 |------|----------|-----------|
 | `/` | `dashboard_master.html` | Dashboard principal con KPIs, gráficos, filtros |
-| `/massive/` | `kadrix/hq.html` | Centro de control |
-| `/massive/board/*` | `kadrix/board.html` | Tablero kanban |
-| `/massive/fixtures` | `kadrix/fixtures.html` | Catálogo de fixtures |
-| `/massive/projects` | `kadrix/projects.html` | Proyectos de mejora |
-| `/massive/activity` | `kadrix/activity.html` | Registro de actividades |
+| `/massive/` | `massive/hq.html` | Centro de control |
+| `/massive/board/*` | `massive/board.html` | Tablero kanban |
+| `/massive/fixtures` | `massive/fixtures.html` | Catálogo de fixtures |
+| `/massive/projects` | `massive/projects.html` | Proyectos de mejora |
+| `/massive/activity` | `massive/activity.html` | Registro de actividades |
 | `/login` | `login.html` | Auth local (opt-in) |
 | `/datos` | `datos.html` | Gestión de datasets |
 

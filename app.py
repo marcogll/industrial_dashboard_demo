@@ -1441,7 +1441,7 @@ def _build_memory_context(user: str) -> str:
 
     # Simple keyword extraction for memory
     keywords = {
-        "northface": 0, "sanmina": 0, "takt": 0, "throughput": 0,
+        "corte_laser": 0, "doblado_fine": 0, "doblado_heavy": 0, "soldadura": 0, "pintura": 0, "takt": 0, "throughput": 0,
         "cuello": 0, "botella": 0, "demanda": 0, "plan": 0,
         "desperdicio": 0, "kanban": 0, "balanceo": 0, "fixture": 0,
     }
@@ -1488,8 +1488,11 @@ def _build_chat_context(user: str = "") -> str:
         demanda      = read_demanda()
         plan         = read_plan_accion()
 
-        nf = balanceo.get("NORTHFACE", [])
-        sm = balanceo.get("SANMINA", [])
+        nf = balanceo.get("Corte LASER", [])
+        sm = balanceo.get("Doblado Fine", [])
+        hv = balanceo.get("Doblado Heavy", [])
+        sol = balanceo.get("Soldadura", [])
+        pint = balanceo.get("Pintura", [])
 
         def line_summary(rows: list[dict], name: str) -> str:
             cuellos = [
@@ -1516,7 +1519,7 @@ def _build_chat_context(user: str = "") -> str:
 
         memory = _build_memory_context(user) if user else ""
 
-        return f"""Eres Bri, el agente de IA del dashboard Massive Dynamic de Ma. Fernanda Rocha.
+        return f"""Eres Mafer, el agente de IA del dashboard Massive Dynamic de Ma. Fernanda Rocha.
 Ma. Fernanda (Mafer) gestiona líneas de producción de racks electrónicos para ensamble.
 
 MISIÓN: Buscar patrones, resolver dudas y conectar ideas usando los datos existentes del dashboard.
@@ -1532,10 +1535,13 @@ SEGURIDAD / PROMPT INJECTION:
 ═══ SNAPSHOT DEL DASHBOARD ═══
 
 LÍNEAS DE PRODUCCIÓN:
-{line_summary(nf, "NORTHFACE")}
-{line_summary(sm, "SANMINA")}
+{line_summary(nf, "Corte LASER")}
+{line_summary(sm, "Doblado Fine")}
+{line_summary(hv, "Doblado Heavy")}
+{line_summary(sol, "Soldadura")}
+{line_summary(pint, "Pintura")}
 
-ANÁLISIS DE DESPERDICIOS (Est.7 NORTHFACE — solo ~46% es trabajo de valor):
+ANÁLISIS DE DESPERDICIOS (Est.7 Corte LASER — solo ~46% es trabajo de valor):
 {desp_txt}
 
 THROUGHPUT (impacto de mejoras propuestas):
@@ -1552,7 +1558,7 @@ NOTA: Si te preguntan algo fuera de este contexto, responde brevemente y redirig
     except Exception as exc:
         logger.warning("Error building chat context: %s", exc)
         return (
-            "Eres Bri, asistente de análisis de producción para el dashboard Massive Dynamic. "
+            "Eres Mafer, asistente de análisis de producción para el dashboard Massive Dynamic. "
             "Responde en español, de forma concisa y amigable."
         )
 
@@ -1560,7 +1566,7 @@ NOTA: Si te preguntan algo fuera de este contexto, responde brevemente y redirig
 def _ask_bri(message: str, user: str = "telegram", history: list | None = None) -> dict[str, str]:
     if not OPENROUTER_API_KEY:
         return {
-            "error": "Bri no esta configurada. Falta OPENROUTER_API_KEY.",
+            "error": "Mafer no esta configurada. Falta OPENROUTER_API_KEY.",
             "model": OPENROUTER_MODEL,
         }
 
@@ -1666,7 +1672,7 @@ TELEGRAM_COMMANDS = [
     {
         "command": "linea",
         "description": "Detalle por linea de produccion.",
-        "usage": "/linea NORTHFACE",
+        "usage": "/linea Corte LASER",
     },
     {
         "command": "cuellos",
@@ -1699,9 +1705,9 @@ TELEGRAM_COMMANDS = [
         "usage": "/actividad fixture=FX-001 status=in_process resp=Marco tag=qa nota=Revision de clamps",
     },
     {
-        "command": "bri",
-        "description": "Pregunta a Bri usando contexto endurecido del dashboard.",
-        "usage": "/bri que patron ves en Northface?",
+        "command": "mafer",
+        "description": "Pregunta a Mafer usando contexto endurecido del dashboard.",
+        "usage": "/mafer que patron ves en Corte LASER?",
     },
     {
         "command": "modelo",
@@ -1723,7 +1729,7 @@ def api_telegram_commands() -> Response:
             ],
             "notes": {
                 "provider": "Telegram Bot API",
-                "ai": "Bri via OpenRouter",
+                "ai": "Mafer via OpenRouter",
                 "model": OPENROUTER_MODEL,
                 "security": "Bot webhooks must validate TELEGRAM_WEBHOOK_SECRET before writing data.",
             },
@@ -1807,7 +1813,7 @@ def _telegram_dashboard_summary(turno: str | None = None) -> str:
     if turno and not stations:
         return (
             "Turno tarde: todavia no hay datos etiquetados con <b>turno=tarde</b>.\n"
-            "Puedes cargar eventos con /dato linea=NORTHFACE estacion=EST-4 ct=3953 turno=tarde nota=..."
+            "Puedes cargar eventos con /dato linea=Corte LASER estacion=EST-4 ct=3953 turno=tarde nota=..."
         )
 
     metrics = build_metrics(stations)
@@ -1835,7 +1841,7 @@ def _telegram_line_summary(line_name: str) -> str:
     line_key = (line_name or "").strip().upper()
     rows = read_balanceo().get(line_key, [])
     if not rows:
-        return f"No encontre la linea <b>{line_key or 'N/A'}</b>. Usa /linea NORTHFACE o /linea SANMINA."
+        return f"No encontre la linea <b>{line_key or 'N/A'}</b>. Usa /linea Corte LASER o /linea Doblado Fine."
     cuellos = []
     for r in rows:
         ct = float(r.get("ct_actual", 0) or 0)
@@ -1944,7 +1950,7 @@ def _telegram_register_activity(text: str, chat_id: int | str, user_name: str) -
 def _telegram_register_dato(text: str, chat_id: int | str, user_name: str) -> str:
     args = _telegram_parse_kv(text)
     if not args.get("nota") and not args.get("ct") and not args.get("status"):
-        return "Faltan datos. Ej: /dato linea=NORTHFACE estacion=EST-4 ct=3953 turno=tarde nota=Validacion"
+        return "Faltan datos. Ej: /dato linea=Corte LASER estacion=EST-4 ct=3953 turno=tarde nota=Validacion"
     _telegram_log_event({
         "type": "dato",
         "chat_id": chat_id,
@@ -1958,24 +1964,24 @@ def _telegram_register_dato(text: str, chat_id: int | str, user_name: str) -> st
 def _telegram_handle_command(text: str, chat_id: int | str, user_name: str) -> str:
     text = (text or "").strip()
     if not text.startswith("/"):
-        return "Usa /help para ver comandos o /bri seguido de una pregunta."
+        return "Usa /help para ver comandos o /mafer seguido de una pregunta."
     command, _, rest = text.partition(" ")
     command = command.split("@", 1)[0].lower()
 
     if command in ("/start", "/help"):
         return (
-            "<b>Massive Dynamic HQ + Bri</b>\n"
+            "<b>Massive Dynamic HQ + Mafer</b>\n"
             "/dashboard - resumen actual\n"
             "/tarde - dashboard turno tarde\n"
             "/kpis - KPIs principales\n"
-            "/linea NORTHFACE - detalle por linea\n"
+            "/linea Corte LASER - detalle por linea\n"
             "/cuellos - cuellos de botella\n"
             "/kanban - alertas de inventario\n"
             "/fixtures o /fizzy status - estado de fixtures\n"
             "/proyectos - boards/proyectos\n"
             "/actividad fixture=FX-001 status=in_process resp=Marco tag=qa nota=...\n"
-            "/dato linea=NORTHFACE estacion=EST-4 ct=3953 turno=tarde nota=...\n"
-            "/bri pregunta libre"
+            "/dato linea=Corte LASER estacion=EST-4 ct=3953 turno=tarde nota=...\n"
+            "/mafer pregunta libre"
         )
     if command in ("/dashboard", "/kpis"):
         return _telegram_dashboard_summary()
@@ -1995,11 +2001,11 @@ def _telegram_handle_command(text: str, chat_id: int | str, user_name: str) -> s
         return _telegram_register_activity(rest, chat_id, user_name)
     if command in ("/dato", "/fizzy_update"):
         return _telegram_register_dato(rest, chat_id, user_name)
-    if command == "/bri":
+    if command == "/mafer":
         result = _ask_bri(rest, user=TELEGRAM_DEFAULT_USER)
-        return result.get("reply") or result.get("error") or "Bri no devolvio respuesta."
+        return result.get("reply") or result.get("error") or "Mafer no devolvio respuesta."
     if command == "/modelo":
-        return f"Bri via OpenRouter\nModelo: {OPENROUTER_MODEL}"
+        return f"Mafer via OpenRouter\nModelo: {OPENROUTER_MODEL}"
     return "Comando no reconocido. Usa /help."
 
 
@@ -2314,7 +2320,7 @@ def _log_startup() -> None:
     logger.info("  Tiempo disponible: %.0f s (%.1f h)", AVAILABLE_SECONDS, AVAILABLE_SECONDS / 3600)
 
     # ── IA / OpenRouter ──────────────────────────────────
-    logger.info("AGENTE IA (Bri)")
+    logger.info("AGENTE IA (Mafer)")
     if OPENROUTER_API_KEY:
         ok(f"OpenRouter configurado — modelo: {OPENROUTER_MODEL}")
     else:

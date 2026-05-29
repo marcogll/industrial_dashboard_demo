@@ -1,5 +1,5 @@
 """
-BRIS Dashboard - Streamlit Edition
+Massive Dynamic — Streamlit Edition
 Dashboard interactivo para KPIs de ensamble Massive Dynamic.
 Correr localmente:  streamlit run streamlit_app.py
 """

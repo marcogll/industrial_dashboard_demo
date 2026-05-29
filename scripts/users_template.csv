@@ -1,5 +1,3 @@
-# username, "Full Name", email@domain.com, role, plain_password
-# Roles validos: admin, manager, technician, operator, viewer
-adriana, "Adriana Ramos", adriana@cadrex.local, admin, cambiame123
-bris, "Bris", bris@cadrex.local, viewer, cambiame123
-admin, "Admin", admin@cadrex.local, god, cambiame123
+username,display_name,email,role,password
+mafer,"Ma. Fernanda Rocha",mafer@massivedynamic.mx,admin,cambiame123
+viewer,"Viewer",viewer@massivedynamic.mx,viewer,cambiame123
