@@ -76,7 +76,8 @@
   </div>
 </div>
 
-<!-- ===== FILTRADO POR PERÍODO ===== -->
+<!-- ===== FILTRADO POR PERÍODO — DESHABILITADO TEMPORALMENTE ===== -->
+<!--
 <div class="filters" style="margin-bottom:20px;">
   <div style="display:flex;align-items:center;gap:12px;width:100%;min-width:0;flex-wrap:wrap;">
     <span class="filter-label">Período</span>
@@ -91,6 +92,7 @@
     <span class="filter-meta" id="periodLabel">ene 5 – jun 30, 2026</span>
   </div>
 </div>
+-->
 
 <!-- ===== KPIs POR SECCIÓN ===== -->
 
@@ -1145,20 +1147,7 @@ function initCharts() {
 
 /* Restore period filter after charts are ready */
 function restorePeriod() {
-  const u = new URL(window.location.href);
-  const from = u.searchParams.get('from');
-  const to = u.searchParams.get('to');
-  if (from && to) {
-    const totalDays = Math.round((new Date(to) - new Date(from)) / (1000*60*60*24));
-    let match = 'all';
-    if (totalDays <= 7) match = '7d';
-    else if (totalDays <= 30) match = '30d';
-    else if (totalDays <= 60) match = '60d';
-    else if (totalDays <= 90) match = '90d';
-    else if (totalDays <= 180) match = '180d';
-    const chip = document.querySelector(`#periodFilters .filter-chip[data-period="${match}"]`);
-    if (chip) setPeriod(match, chip);
-  }
+  // Deshabilitado temporalmente — se reactivará cuando se arregle el backend
 }
 
 if (document.readyState === 'loading') {
@@ -1214,57 +1203,7 @@ function fmtShort(d) {
 }
 
 function setPeriod(period, btn) {
-  document.querySelectorAll('#periodFilters .filter-chip').forEach(c => c.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-
-  var fromStr = '', toStr = '';
-  if (period !== 'all') {
-    var end = new Date(DATA_END);
-    var days = parseInt(period);
-    var start = new Date(end);
-    start.setDate(start.getDate() - days);
-    fromStr = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
-    toStr = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
-  }
-
-  var months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  document.getElementById('periodLabel').textContent =
-    period === 'all' ? 'Todo el período' : start.getDate() + ' ' + months[start.getMonth()] + ', ' + start.getFullYear() + ' \u2013 ' + end.getDate() + ' ' + months[end.getMonth()] + ', ' + end.getFullYear();
-
-  var u = new URL(window.location.href);
-  if (fromStr) { u.searchParams.set('from', fromStr); } else { u.searchParams.delete('from'); }
-  if (toStr)   { u.searchParams.set('to', toStr);   } else { u.searchParams.delete('to'); }
-  window.history.replaceState({}, '', u);
-
-  var params = new URLSearchParams();
-  if (fromStr) params.set('from', fromStr);
-  if (toStr)   params.set('to', toStr);
-
-  var url1 = '/api/produccion/metrics?' + params;
-  var url2 = '/api/produccion/timeseries?' + params;
-
-  fetch(url1).then(function(r) { return r.json(); }).then(function(m) {
-    document.getElementById('kpiTotalProd').textContent = m.total_producido.toLocaleString();
-    document.getElementById('kpiOee').textContent = (m.avg_oee * 100).toFixed(1);
-    document.getElementById('kpiScrap').textContent = m.scrap_rate.toFixed(1);
-    document.getElementById('kpiDowntime').textContent = m.total_downtime_min > 0 && m.rows > 0
-      ? (m.total_downtime_min / m.rows).toFixed(1) : '0';
-  }).catch(function(err) { console.error('Period metrics error:', err); });
-
-  fetch(url2).then(function(r) { return r.json(); }).then(function(ts) {
-    if (window.dailyProdChart) {
-      var labels = [], prod = [], meta = [];
-      for (var i = 0; i < ts.length; i++) {
-        labels.push(ts[i].fecha);
-        prod.push(ts[i].producido);
-        meta.push(ts[i].meta);
-      }
-      window.dailyProdChart.data.labels = labels;
-      window.dailyProdChart.data.datasets[0].data = prod;
-      window.dailyProdChart.data.datasets[1].data = meta;
-      window.dailyProdChart.update('none');
-    }
-  }).catch(function(err) { console.error('Period timeseries error:', err); });
+  // Deshabilitado temporalmente — los filtros de período no están operativos
 }
 
 </script>
