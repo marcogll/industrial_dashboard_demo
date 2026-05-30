@@ -2,7 +2,7 @@ const CACHE_NAME = 'md-pwa-cache-v1';
 const ASSETS_TO_CACHE = [
   './',
   '/static/css/dashboard.css',
-  '/static/massive_dynamic.svg'
+  '/static/md_pwa_icon.png'
 ];
 
 // Install Event

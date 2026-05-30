@@ -1290,7 +1290,7 @@ def manifest() -> Response:
     if configured_scope == "/" and start_url != "/":
         configured_scope = ""
     scope = configured_scope or start_url
-    icon_url = url_for("static", filename="md_pwa_icon.jpg")
+    icon_url = url_for("static", filename="md_pwa_icon.png")
     return jsonify(
         {
             "name": "Massive Dynamic Dashboard",
@@ -1305,20 +1305,14 @@ def manifest() -> Response:
             "icons": [
                 {
                     "src": icon_url,
-                    "sizes": "626x626",
-                    "type": "image/jpeg",
-                    "purpose": "any maskable",
-                },
-                {
-                    "src": icon_url,
                     "sizes": "512x512",
-                    "type": "image/jpeg",
+                    "type": "image/png",
                     "purpose": "any maskable",
                 },
                 {
                     "src": icon_url,
                     "sizes": "192x192",
-                    "type": "image/jpeg",
+                    "type": "image/png",
                     "purpose": "any maskable",
                 },
             ],
@@ -1328,7 +1322,7 @@ def manifest() -> Response:
 
 @app.route("/favicon.ico")
 def favicon():
-    return send_file(BASE_DIR / "static" / "md_pwa_icon.jpg", mimetype="image/jpeg")
+    return send_file(BASE_DIR / "static" / "favicon.ico")
 
 
 @app.route("/service-worker.js")
@@ -1339,7 +1333,7 @@ const CACHE_NAME = {json.dumps(cache_name)};
 const ASSETS_TO_CACHE = [
   {json.dumps(url_for('dashboard'))},
   {json.dumps(url_for('static', filename='css/dashboard.css'))},
-  {json.dumps(url_for('static', filename='md_pwa_icon.jpg'))}
+  {json.dumps(url_for('static', filename='md_pwa_icon.png'))}
 ];
 
 self.addEventListener('install', event => {{
