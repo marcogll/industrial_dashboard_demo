@@ -1,7 +1,7 @@
 services:
-  dashboard:
+  dashboard-md:
     build: .
-    container_name: md-dashboard
+    container_name: md-dashboard-md
     volumes:
       - ./data:/app/data
       - ./claude:/app/claude
@@ -22,7 +22,7 @@ services:
       - "8743"
     labels:
       - "traefik.docker.network=coolify"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=8743"
+      - "traefik.http.services.dashboard-md.loadbalancer.server.port=8743"
     restart: unless-stopped
     networks:
       - coolify
